@@ -9,6 +9,8 @@ import 'package:thermal_printer/esc_pos_utils_platform/src/enums.dart';
 import 'package:thermal_printer/esc_pos_utils_platform/src/generator.dart';
 import 'package:thermal_printer/thermal_printer.dart';
 
+import '../../model/sip_printer_model.dart';
+
 class ThermalPrinterManager {
   final PrinterManager _printer = PrinterManager.instance;
   final CapabilityProfile _profile;
@@ -151,15 +153,15 @@ class ThermalPrinterManager {
     }
   }
 
-  StreamController startScanPrinter({required PrinterType type, bool isBle = false}) {
-    final _streamController = StreamController();
-    final _subscription = _printer.discovery(type: type, isBle: isBle).listen((device) {
-      _streamController.add(device);
+  StreamController<SipPrinterDevice> startScanPrinter({required PrinterTypeEnum type, bool isBle = false}) {
+    final streamController = StreamController<SipPrinterDevice>();
+    final subscription = _printer.discovery(type: _printerPaperTypeToPrinterType(type), isBle: isBle).listen((device) {
+      streamController.add(SipPrinterDevice.fromPrinterDevice(device));
     });
-    _streamController.onCancel = () {
-      _subscription.cancel();
+    streamController.onCancel = () {
+      subscription.cancel();
     };
-    return _streamController;
+    return streamController;
   }
 
   PaperSize _printerPaperTypeToPaperSize(PrinterPaperTypeEnum type) {
