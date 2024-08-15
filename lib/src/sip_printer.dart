@@ -1,10 +1,10 @@
 import 'package:sip_models/ri_models.dart';
 
 class SipPrinter {
-  static late final SipPrinter instance;
-  final ParametersResponseDealerInfoModel dealerInfo;
-  final String languageCode;
-  final String priceUnit;
+  static late SipPrinter instance;
+  ParametersResponseDealerInfoModel dealerInfo;
+  String languageCode;
+  String priceUnit;
 
   SipPrinter({
     required this.dealerInfo,
