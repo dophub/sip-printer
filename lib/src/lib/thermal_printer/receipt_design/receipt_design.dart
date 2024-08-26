@@ -20,6 +20,7 @@ class ReceiptDesign extends DesignFunctions {
 
       /// MarketPlace logo ------------------------------------------------------------------
       await add3PartLogo(byte, order.clientPointId);
+      addEmptyLines(byte);
 
       /// title ------------------------------------------------------------------
       addReceiptTitle(byte, 'PAKET');

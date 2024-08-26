@@ -140,6 +140,21 @@ abstract class DesignFunctions {
       ]),
     );
 
+    /// order code ------------------------------------------------------------------
+    /// sipariş numarasının son 4 hanesi random sayıdır
+    final String code = order.orderNumber ?? '';
+    if (code.trim().isNotEmpty) {
+      byte.addAll(
+        generator.row([
+          PosColumn(
+            width: 12,
+            text: _createTowColumn('Sipariş kodu: ', code),
+            styles: const PosStyles(align: PosAlign.left, width: PosTextSize.size1),
+          ),
+        ]),
+      );
+    }
+
     /// create date ------------------------------------------------------------------
     final date = DateFormat('dd.MM.yyyy HH:mm').format(order.recordDate ?? DateTime.now()).withoutDiacriticalMarks();
     byte.addAll(
