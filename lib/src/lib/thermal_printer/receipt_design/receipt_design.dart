@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:collection/collection.dart';
 import 'package:sip_models/enum.dart';
 import 'package:sip_models/ri_enum.dart';
 import 'package:sip_printer/src/extanstion/date_time_extension.dart';
@@ -11,15 +12,18 @@ import 'package:sip_models/ri_models.dart';
 class ReceiptDesign extends DesignFunctions {
   ReceiptDesign(super.generator, super._paperSize);
 
-  List<int> createReceiptForTakeAway(PrinterQueueResponseModel printData) {
+  Future<List<int>> createReceiptForTakeAway(PrinterQueueResponseModel printData) async {
     try {
       List<int> byte = [];
+
+      final order = printData.printData!.orders!.first;
+
+      /// MarketPlace logo ------------------------------------------------------------------
+      await add3PartLogo(byte, order.clientPointId);
 
       /// title ------------------------------------------------------------------
       addReceiptTitle(byte, 'PAKET');
       addEmptyLines(byte);
-
-      final order = printData.printData!.orders!.first;
 
       /// header ------------------------------------------------------------------
       addOrderHeader(byte, order, printCustomerPhoneNo: true, printCustomerAddress: true);

@@ -49,7 +49,7 @@ class ThermalPrinterManager {
   Future<void> printReceiptForTakeout(PrinterConfigModel config, PrinterQueueResponseModel printModel) async {
     try {
       final type = _printerPaperTypeToPaperSize(config.paperSize);
-      List<int> bytes = ReceiptDesign(Generator(type, _profile), type).createReceiptForTakeAway(printModel);
+      List<int> bytes = await ReceiptDesign(Generator(type, _profile), type).createReceiptForTakeAway(printModel);
       await _print(config, bytes);
     } catch (e) {
       rethrow;
