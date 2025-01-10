@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:collection/collection.dart';
 import 'package:sip_models/enum.dart';
 import 'package:sip_models/ri_enum.dart';
 import 'package:sip_printer/src/extanstion/date_time_extension.dart';
@@ -39,7 +38,7 @@ class ReceiptDesign extends DesignFunctions {
       addEmptyLines(byte);
 
       /// dealer name ------------------------------------------------------------------
-      addFooter(byte);
+      addFooter(byte, printData.printData!.dealerInfo);
 
       cut(byte);
       return byte;
@@ -71,7 +70,7 @@ class ReceiptDesign extends DesignFunctions {
       addEmptyLines(byte);
 
       /// footer ------------------------------------------------------------------
-      addFooter(byte);
+      addFooter(byte, printData.printData!.dealerInfo);
 
       cut(byte);
       return byte;
@@ -132,7 +131,7 @@ class ReceiptDesign extends DesignFunctions {
       if (printData.footers!.isNotEmpty) addEmptyLines(byte);
 
       /// footer ------------------------------------------------------------------
-      addFooter(byte);
+      addFooter(byte, printData.printData!.dealerInfo);
       cut(byte);
       return byte;
     } catch (e) {
@@ -173,7 +172,7 @@ class ReceiptDesign extends DesignFunctions {
       addEmptyLines(byte);
 
       /// footer ------------------------------------------------------------------
-      addFooter(byte);
+      addFooter(byte, printData.printData!.dealerInfo);
       cut(byte);
       return byte;
     } catch (e) {
@@ -208,7 +207,7 @@ class ReceiptDesign extends DesignFunctions {
       addEmptyLines(byte);
 
       /// footer ------------------------------------------------------------------
-      addFooter(byte);
+      addFooter(byte, printData.printData!.dealerInfo);
       cut(byte);
       return byte;
     } catch (e) {
@@ -265,7 +264,7 @@ class ReceiptDesign extends DesignFunctions {
       addEmptyLines(byte);
 
       /// Footer ------------------------------------------------------------------
-      addFooter(byte);
+      addFooter(byte, null);
       cut(byte);
       return byte;
     } catch (e) {
@@ -312,7 +311,7 @@ class ReceiptDesign extends DesignFunctions {
 
   List<int> testTicket() {
     List<int> byte = [];
-    addFooter(byte);
+    addFooter(byte, null);
     addEmptyLines(byte);
     cut(byte);
     return byte;
