@@ -395,7 +395,7 @@ abstract class DesignFunctions {
         PosColumn(width: 1, text: '', styles: const PosStyles(align: PosAlign.left)),
         PosColumn(
           width: 10,
-          text: dealerIndo?.dealerName ?? SipPrinter.instance.dealerInfo.dealerName!.withoutDiacriticalMarks(),
+          text: (dealerIndo?.dealerName ?? SipPrinter.instance.dealerInfo.dealerName)!.withoutDiacriticalMarks(),
           styles: const PosStyles(align: PosAlign.center, width: PosTextSize.size1),
         ),
         PosColumn(width: 1, text: '', styles: const PosStyles(align: PosAlign.left)),
@@ -408,7 +408,7 @@ abstract class DesignFunctions {
         PosColumn(width: 1, text: '', styles: const PosStyles(align: PosAlign.left)),
         PosColumn(
           width: 10,
-          text: dealerIndo?.address ?? SipPrinter.instance.dealerInfo.address!.address!.withoutDiacriticalMarks(),
+          text: (dealerIndo?.address ?? SipPrinter.instance.dealerInfo.address!.address!).withoutDiacriticalMarks(),
           styles: const PosStyles(align: PosAlign.center, width: PosTextSize.size1),
         ),
         PosColumn(width: 1, text: '', styles: const PosStyles(align: PosAlign.left)),
