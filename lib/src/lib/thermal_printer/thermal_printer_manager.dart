@@ -1,18 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_thermal_printer/flutter_thermal_printer.dart';
+import 'package:flutter_thermal_printer/network/network_print_result.dart';
+import 'package:flutter_thermal_printer/utils/printer.dart';
 import 'package:sip_models/ri_enum.dart';
 import 'package:sip_models/ri_models.dart';
 import 'package:sip_printer/src/lib/thermal_printer/receipt_design/receipt_design.dart';
-import 'package:thermal_printer/esc_pos_utils_platform/src/capability_profile.dart';
-import 'package:thermal_printer/esc_pos_utils_platform/src/enums.dart';
-import 'package:thermal_printer/esc_pos_utils_platform/src/generator.dart';
-import 'package:thermal_printer/thermal_printer.dart';
-
-import '../../model/sip_printer_model.dart';
 
 class ThermalPrinterManager {
-  final PrinterManager _printer = PrinterManager.instance;
+  // final PrinterManager _printer = PrinterManager.instance;
   final CapabilityProfile _profile;
 
   static ThermalPrinterManager? _instance;
@@ -111,33 +108,63 @@ class ThermalPrinterManager {
     }
   }
 
+  Future<List<int>> printTestByte(PrinterConfigModel config) async {
+    try {
+      final type = _printerPaperTypeToPaperSize(config.paperSize);
+      List<int> bytes = ReceiptDesign(Generator(type, _profile), type).testTicket();
+      return bytes;
+    } catch (e) {
+      debugPrint(e.toString());
+      rethrow;
+    }
+  }
+
   Future<void> _print(PrinterConfigModel config, List<int> bytes) async {
     try {
-      final BasePrinterInput model;
       switch (config.typePrinter) {
-        case PrinterTypeEnum.USB:
-          model = UsbPrinterInput(
+        case PrinterTypeEnum.NETWORK || PrinterTypeEnum.LOCAL:
+          final service = FlutterThermalPrinterNetwork(config.ipAddress!, port: config.port!);
+          final connectStatus = await service.connect();
+          if (connectStatus != NetworkPrintResult.success) throw 'Yazıcı bağlantı hatası';
+
+          final printStatus = await service.printTicket(bytes);
+          await service.disconnect();
+          if (printStatus != NetworkPrintResult.success) throw 'Yazıcıya çıktı gönderilemedi';
+
+          break;
+        case PrinterTypeEnum.USB || PrinterTypeEnum.BLUETOOTH:
+/*          model = UsbPrinterInput(
             name: config.name,
             productId: config.productId,
             vendorId: config.vendorId,
           );
-          break;
-        case PrinterTypeEnum.NETWORK || PrinterTypeEnum.LOCAL:
-          model = TcpPrinterInput(
-            ipAddress: config.ipAddress!,
-            port: config.port!,
-          );
-          break;
-        case PrinterTypeEnum.BLUETOOTH:
+
           model = BluetoothPrinterInput(
             name: config.name,
             address: config.ipAddress!,
             isBle: config.isBle ?? false,
             autoConnect: false,
+          );*/
+
+          final flutterThermalPrinterPlugin = FlutterThermalPrinter.instance;
+          final printer = Printer(
+            connectionType: config.typePrinter == PrinterTypeEnum.USB ? ConnectionType.USB : ConnectionType.BLE,
+            address: config.ipAddress!,
+            name: config.name,
+            // isConnected: false,
+            vendorId: config.vendorId,
+            productId: config.productId,
           );
+
+          final connectStatus = await flutterThermalPrinterPlugin.connect(printer);
+          if (connectStatus != true) throw 'Yazıcı bağlantı hatası';
+
+          await flutterThermalPrinterPlugin.printData(printer, bytes);
+          await flutterThermalPrinterPlugin.disconnect(printer);
           break;
       }
-      final type = _printerPaperTypeToPrinterType(config.typePrinter);
+
+/*      final type = _printerPaperTypeToPrinterType(config.typePrinter);
       bool result = await _printer.connect(type: type, model: model);
       if (result == false) throw 'Yazıcı bağlantı hatası';
 
@@ -147,21 +174,36 @@ class ThermalPrinterManager {
         throw 'Yazıcıya çıktı gönderilemedi';
       }
 
-      await _printer.disconnect(type: type);
+      await _printer.disconnect(type: type);*/
     } catch (e) {
       rethrow;
     }
   }
 
-  StreamController<SipPrinterDevice> startScanPrinter({required PrinterTypeEnum type, bool isBle = false}) {
-    final streamController = StreamController<SipPrinterDevice>();
+  Future<StreamController<List<Printer>>> startScanPrinter({
+    List<ConnectionType> connectionTypes = const [ConnectionType.USB],
+    // bool isBle = false,
+  }) async {
+    final flutterThermalPrinterPlugin = FlutterThermalPrinter.instance;
+    final streamController = StreamController<List<Printer>>();
+    await flutterThermalPrinterPlugin.getPrinters(connectionTypes: connectionTypes);
+    final StreamSubscription<List<Printer>> devicesStreamSubscription =
+        flutterThermalPrinterPlugin.devicesStream.listen((List<Printer> printers) {
+      streamController.add(printers);
+    });
+    streamController.onCancel = () {
+      devicesStreamSubscription.cancel();
+    };
+    return streamController;
+
+/*    final streamController = StreamController<SipPrinterDevice>();
     final subscription = _printer.discovery(type: _printerPaperTypeToPrinterType(type), isBle: isBle).listen((device) {
       streamController.add(SipPrinterDevice.fromPrinterDevice(device));
     });
     streamController.onCancel = () {
       subscription.cancel();
     };
-    return streamController;
+    return streamController;*/
   }
 
   PaperSize _printerPaperTypeToPaperSize(PrinterPaperTypeEnum type) {
@@ -173,7 +215,7 @@ class ThermalPrinterManager {
     }
   }
 
-  PrinterType _printerPaperTypeToPrinterType(PrinterTypeEnum type) {
+/*  PrinterType _printerPaperTypeToPrinterType(PrinterTypeEnum type) {
     switch (type) {
       case PrinterTypeEnum.NETWORK || PrinterTypeEnum.LOCAL:
         return PrinterType.network;
@@ -182,5 +224,5 @@ class ThermalPrinterManager {
       case PrinterTypeEnum.BLUETOOTH:
         return PrinterType.bluetooth;
     }
-  }
+  }*/
 }

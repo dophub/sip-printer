@@ -1,17 +1,13 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_thermal_printer/flutter_thermal_printer.dart';
 import 'package:intl/intl.dart';
 import 'package:sip_models/enum.dart';
 import 'package:sip_models/request.dart';
 import 'package:sip_models/ri_enum.dart';
 import 'package:sip_printer/src/extanstion/extension_string.dart';
 import 'package:sip_printer/src/extanstion/general_extenstion.dart';
-import 'package:thermal_printer/esc_pos_utils_platform/src/capability_profile.dart';
-import 'package:thermal_printer/esc_pos_utils_platform/src/enums.dart';
-import 'package:thermal_printer/esc_pos_utils_platform/src/generator.dart';
-import 'package:thermal_printer/esc_pos_utils_platform/src/pos_column.dart';
-import 'package:thermal_printer/esc_pos_utils_platform/src/pos_styles.dart';
 import 'package:sip_models/ri_models.dart';
 import 'package:image/image.dart' as img;
 
