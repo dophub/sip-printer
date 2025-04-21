@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
+import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_thermal_printer/flutter_thermal_printer.dart';
 import 'package:intl/intl.dart';
 import 'package:sip_models/enum.dart';
 import 'package:sip_models/request.dart';
