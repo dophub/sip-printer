@@ -13,7 +13,6 @@ import 'package:sip_models/ri_models.dart';
 
 import '../../../sip_printer.dart';
 
-
 /// [TABLE] => Masadan Ödeme
 /// [TAKEOUT] => Adrese Teslim
 /// [GETIN] => Gel Al
@@ -83,7 +82,7 @@ class SunmiPrinterHeader {
     await SunmiPrinter.initPrinter().then((var init) async {
       if (init!) {
         await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
-        await SunmiPrinter.printText('** ${SipPrinter.instance.dealerInfo.dealerName} **',
+        await SunmiPrinter.printText('** ${SipPrinter.instance.headerTitle.withoutDiacriticalMarks()} **',
             style: SunmiStyle(
               fontSize: SunmiFontSize.MD,
               bold: true,
@@ -307,7 +306,7 @@ class SunmiPrinterHeader {
       await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
 
       /// Dealer Name
-      final dealerName = SipPrinter.instance.dealerInfo.dealerName!.withoutDiacriticalMarks();
+      final dealerName = SipPrinter.instance.headerTitle.withoutDiacriticalMarks();
       final dealerNameList = orderDetailFitter(dealerName, 31);
       for (String dealerStr in dealerNameList) {
         await SunmiPrinter.printText(
@@ -321,7 +320,7 @@ class SunmiPrinterHeader {
       }
 
       /// Dealer addres
-      final address = SipPrinter.instance.dealerInfo.address!.address!.withoutDiacriticalMarks();
+      final address = SipPrinter.instance.footerTitle.withoutDiacriticalMarks();
       final addressList = orderDetailFitter(address, 31);
       for (String addressStr in addressList) {
         await SunmiPrinter.printText(

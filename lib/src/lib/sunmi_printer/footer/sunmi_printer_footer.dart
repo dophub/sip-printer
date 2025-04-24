@@ -107,13 +107,13 @@ class SunmiPrinterFooter {
   Future<void> _childBottomFooter() async {
     await SunmiPrinter.line();
     await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
-    await SunmiPrinter.printText(SipPrinter.instance.dealerInfo.toString().withoutDiacriticalMarks(),
+    await SunmiPrinter.printText(SipPrinter.instance.headerTitle.withoutDiacriticalMarks(),
         style: SunmiStyle(
           fontSize: SunmiFontSize.MD,
           bold: true,
         ));
     await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
-    await SunmiPrinter.printText(SipPrinter.instance.dealerInfo.address!.address.toString().withoutDiacriticalMarks(),
+    await SunmiPrinter.printText(SipPrinter.instance.footerTitle.withoutDiacriticalMarks(),
         style: SunmiStyle(
           fontSize: SunmiFontSize.MD,
         ));
