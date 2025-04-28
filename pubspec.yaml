@@ -23,10 +23,10 @@ dependencies:
       ref: prod
 
   usb_printer:
-    path: ../../usb_printer
-#    git:
-#      url: https://github.com/dophub/sip-models.git
-#      ref: prod
+  #path: ../../usb_printer
+    git:
+      url: https://github.com/Mto292/usb_printer.git
+      ref: main
 
 dev_dependencies:
   flutter_test:
