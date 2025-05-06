@@ -507,31 +507,35 @@ abstract class DesignFunctions {
 
   Future<void> add3PartLogo(List<int> byte, String? clientPointId) async {
     final is3PartOrder = ThirdPartClientPointId.values.firstWhereOrNull((e) => e.name == clientPointId);
-    switch (is3PartOrder) {
-      case null:
-        break;
-      case ThirdPartClientPointId.MIGROSYEMEK:
-        await _addImage(byte, 'packages/sip_printer/assets/logo/migrosyemek_logo.jpg');
-        break;
-      case ThirdPartClientPointId.GETIR:
-        await _addImage(byte, 'packages/sip_printer/assets/logo/getiryemek_logo.jpg');
-        break;
-      case ThirdPartClientPointId.TRENDYOL:
-        await _addImage(byte, 'packages/sip_printer/assets/logo/trendyolyemek_logo.jpg');
-        break;
-      case ThirdPartClientPointId.YEMEKSEPETI:
-        await _addImage(byte, 'packages/sip_printer/assets/logo/yemeksepeti_logo.jpg');
-        break;
+    try {
+      final String assetsPath;
+      switch (is3PartOrder) {
+        case null:
+          return;
+        case ThirdPartClientPointId.MIGROSYEMEK:
+          assetsPath = 'packages/sip_printer/assets/logo/migrosyemek_logo.jpg';
+          break;
+        case ThirdPartClientPointId.GETIR:
+          assetsPath = 'packages/sip_printer/assets/logo/getiryemek_logo.jpg';
+          break;
+        case ThirdPartClientPointId.TRENDYOL:
+          assetsPath = 'packages/sip_printer/assets/logo/trendyolyemek_logo.jpg';
+          break;
+        case ThirdPartClientPointId.YEMEKSEPETI:
+          assetsPath = 'packages/sip_printer/assets/logo/yemeksepeti_logo.jpg';
+          break;
+      }
+
+      final ByteData data = await rootBundle.load(assetsPath);
+      final Uint8List imageBytes = data.buffer.asUint8List();
+      final decodedImage = img.decodeImage(imageBytes)!;
+      final grayscaleImage = img.grayscale(decodedImage);
+      final _imageRaster = generator.imageRaster(grayscaleImage, align: PosAlign.center);
+      byte.addAll(_imageRaster);
+    } catch (e) {
+      addReceiptTitle(byte, clientPointId!);
     }
   }
 
-  Future<void> _addImage(List<int> byte, String src) async {
-    final ByteData data = await rootBundle.load(src);
-    if (data.lengthInBytes > 0) {
-      final Uint8List imageBytes = data.buffer.asUint8List();
-      final decodedImage = img.decodeImage(imageBytes)!;
-      var grayscaleImage = img.grayscale(decodedImage);
-      byte.addAll(generator.imageRaster(grayscaleImage, align: PosAlign.center));
-    }
-  }
 }
+

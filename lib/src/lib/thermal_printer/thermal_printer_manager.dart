@@ -100,7 +100,7 @@ class ThermalPrinterManager {
     }
   }
 
-  List<int> createReceiptForTest(PrinterPaperTypeEnum paperSize) {
+  Future<List<int>> createReceiptForTest(PrinterPaperTypeEnum paperSize) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
       return ReceiptDesign(Generator(type, _profile), type).testTicket();

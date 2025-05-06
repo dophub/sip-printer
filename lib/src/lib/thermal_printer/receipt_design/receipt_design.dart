@@ -309,8 +309,12 @@ class ReceiptDesign extends DesignFunctions {
     }
   }
 
-  List<int> testTicket() {
+  Future<List<int>> testTicket() async {
     List<int> byte = [];
+    await add3PartLogo(byte, ThirdPartClientPointId.GETIR.name);
+    await add3PartLogo(byte, ThirdPartClientPointId.MIGROSYEMEK.name);
+    await add3PartLogo(byte, ThirdPartClientPointId.YEMEKSEPETI.name);
+    await add3PartLogo(byte, ThirdPartClientPointId.TRENDYOL.name);
     addFooter(byte, null);
     addEmptyLines(byte);
     cut(byte);
