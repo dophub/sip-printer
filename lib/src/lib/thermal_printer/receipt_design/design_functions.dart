@@ -443,7 +443,7 @@ abstract class DesignFunctions {
   }
 
   void cut(List<int> byte) {
-    byte.addAll(generator.cut());
+    byte.addAll(generator.cut(mode: PosCutMode.partial));
   }
 
   PosTextSize getSize(String? size) {
@@ -536,6 +536,4 @@ abstract class DesignFunctions {
       addReceiptTitle(byte, clientPointId!);
     }
   }
-
 }
-
