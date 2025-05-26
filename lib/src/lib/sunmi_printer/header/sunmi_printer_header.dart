@@ -274,19 +274,25 @@ class SunmiPrinterHeader {
         ]);
         //DIVIDER
         await SunmiPrinter.line();
-        await SunmiPrinter.printText("TEST FİRMASI",
-            style: SunmiStyle(
-              fontSize: SunmiFontSize.MD,
-              bold: true,
-            ));
+        await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
+        await SunmiPrinter.printQRCode('https://sorgula.turkcellesirket.com/earsiv/7710617226/SAS2025000035290/1,00', size: 4);
+        await SunmiPrinter.printText(
+          'E-Belgeye erişmek için'.withoutDiacriticalMarks(),
+          style: SunmiStyle(
+            fontSize: SunmiFontSize.MD,
+            bold: false,
+            align: SunmiPrintAlign.CENTER,
+          ),
+        );
+        await SunmiPrinter.printText(
+          'yukarıdaki QR kodu okutunuz.'.withoutDiacriticalMarks(),
+          style: SunmiStyle(
+            fontSize: SunmiFontSize.MD,
+            bold: false,
+            align: SunmiPrintAlign.CENTER,
+          ),
+        );
 
-        await SunmiPrinter.line();
-        await SunmiPrinter.printText('Test Notu', style: SunmiStyle(fontSize: SunmiFontSize.MD, bold: true));
-
-        await SunmiPrinter.printText('Bu Bir Test Fişidir',
-            style: SunmiStyle(
-              fontSize: SunmiFontSize.MD,
-            ));
         await SunmiPrinter.line();
         await SunmiPrinter.lineWrap(3);
         await SunmiPrinter.exitTransactionPrint(true);
@@ -454,7 +460,25 @@ class SunmiPrinterHeader {
       /// invoice QR
       if (invoiceLink != null) {
         await SunmiPrinter.line();
-        await SunmiPrinter.printQRCode(invoiceLink);
+        await SunmiPrinter.lineWrap(1);
+        await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
+        await SunmiPrinter.printQRCode('https://sorgula.turkcellesirket.com/earsiv/7710617226/SAS2025000035290/1,00', size: 4);
+        await SunmiPrinter.printText(
+          'E-Belgeye erişmek için'.withoutDiacriticalMarks(),
+          style: SunmiStyle(
+            fontSize: SunmiFontSize.MD,
+            bold: false,
+            align: SunmiPrintAlign.CENTER,
+          ),
+        );
+        await SunmiPrinter.printText(
+          'yukarıdaki QR kodu okutunuz.'.withoutDiacriticalMarks(),
+          style: SunmiStyle(
+            fontSize: SunmiFontSize.MD,
+            bold: false,
+            align: SunmiPrintAlign.CENTER,
+          ),
+        );
       }
 
       /// Footer
