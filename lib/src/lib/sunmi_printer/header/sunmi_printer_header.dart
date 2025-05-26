@@ -300,6 +300,7 @@ class SunmiPrinterHeader {
     required bool isPayment,
     List<PrinterLineAndStyleModel>? headers,
     List<PrinterLineAndStyleModel>? footers,
+    String? invoiceLink,
   }) async {
     await SunmiPrinter.initPrinter().then((init) async {
       if (init == false) return;
@@ -449,6 +450,12 @@ class SunmiPrinterHeader {
           bold: true,
         ),
       );
+
+      /// invoice QR
+      if (invoiceLink != null) {
+        await SunmiPrinter.line();
+        await SunmiPrinter.printQRCode(invoiceLink);
+      }
 
       /// Footer
       if (footers?.isNotEmpty == true) await SunmiPrinter.line();
