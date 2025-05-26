@@ -140,6 +140,7 @@ class SunmiPrinter extends SunmiPrinterService {
     required String paymentModelId,
     List<PrinterLineAndStyleModel>? headers,
     List<PrinterLineAndStyleModel>? footers,
+    String? invoiceLink,
   }) {
     Timer.run(() async {
       await SunmiPrinterHeader().printForBackgroundProcess(
@@ -148,6 +149,7 @@ class SunmiPrinter extends SunmiPrinterService {
         paymentModelId: paymentModelId,
         headers: headers,
         footers: footers,
+        invoiceLink: invoiceLink,
       );
     });
   }
