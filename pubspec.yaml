@@ -19,6 +19,7 @@ dependencies:
   sunmi_printer_plus: ^3.0.0
   intl: any
   collection: any
+  qr_flutter: ^4.1.0
 
   sip_models:
     git:

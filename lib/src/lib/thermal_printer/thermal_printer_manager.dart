@@ -22,7 +22,7 @@ class ThermalPrinterManager {
   }
 
   /// Sipariş Fişi
-  List<int> createReceiptForTable(PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
+  Future<List<int>> createReceiptForTable(PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
       return ReceiptDesign(Generator(type, _profile), type).createReceiptForTable(printModel);

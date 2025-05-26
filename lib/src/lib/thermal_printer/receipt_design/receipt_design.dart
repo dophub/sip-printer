@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:sip_models/enum.dart';
 import 'package:sip_models/ri_enum.dart';
 import 'package:sip_printer/src/extanstion/date_time_extension.dart';
@@ -80,7 +81,7 @@ class ReceiptDesign extends DesignFunctions {
   }
 
   /// sipariş fişi
-  List<int> createReceiptForTable(PrinterQueueResponseModel printData) {
+  Future<List<int>> createReceiptForTable(PrinterQueueResponseModel printData) async {
     try {
       List<int> byte = [];
 
@@ -117,11 +118,26 @@ class ReceiptDesign extends DesignFunctions {
         /// order item ------------------------------------------------------------------
         createColumnFromOrderDetail(byte, order.items!);
         addSeparator(byte);
+
+        /// Invoice QR Link
+        /// birden fazla order varsa her order için ayrı ayrı qr basar bitane order varsa fişin sonunda bitane qr basar
+        if (printData.printData!.orders!.length > 1 && order.invoiceSuccessLink != null) {
+          await addInvoiceQRLink(byte, order.invoiceSuccessLink!);
+          addSeparator(byte);
+        }
       }
 
       /// payment ------------------------------------------------------------------
       addPaymentDetail(byte, printData.printData!);
       addEmptyLines(byte);
+
+      /// Invoice QR Link ------------------------------------------------------------------
+      /// birden fazla order varsa her order için ayrı ayrı qr basar bitane order varsa fişin sonunda bitane qr basar
+      if (printData.printData!.orders!.length == 1 && printData.printData!.orders!.first.invoiceSuccessLink != null) {
+        addSeparator(byte);
+        await addInvoiceQRLink(byte, printData.printData!.orders!.first.invoiceSuccessLink!);
+        addSeparator(byte);
+      }
 
       /// api footer ------------------------------------------------------------------
       for (var element in printData.footers!) {
@@ -311,10 +327,16 @@ class ReceiptDesign extends DesignFunctions {
 
   Future<List<int>> testTicket() async {
     List<int> byte = [];
+    await addQR(byte, 'https://siparisim.com.tr/');
+    addEmptyLines(byte);
     await add3PartLogo(byte, ThirdPartClientPointId.GETIR.name);
+    addEmptyLines(byte);
     await add3PartLogo(byte, ThirdPartClientPointId.MIGROSYEMEK.name);
+    addEmptyLines(byte);
     await add3PartLogo(byte, ThirdPartClientPointId.YEMEKSEPETI.name);
+    addEmptyLines(byte);
     await add3PartLogo(byte, ThirdPartClientPointId.TRENDYOL.name);
+    addEmptyLines(byte);
     addFooter(byte, null);
     addEmptyLines(byte);
     cut(byte);

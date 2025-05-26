@@ -3,6 +3,7 @@ import 'package:collection/collection.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sip_models/enum.dart';
 import 'package:sip_models/request.dart';
 import 'package:sip_models/ri_enum.dart';
@@ -503,6 +504,49 @@ abstract class DesignFunctions {
         ),
       ]),
     );
+  }
+
+  Future<void> addInvoiceQRLink(List<int> byte, String link) async {
+    await addQR(byte, link);
+    byte.addAll(
+      generator.text(
+        'E-Belgeye erişmek için'.withoutDiacriticalMarks(),
+        styles: const PosStyles(align: PosAlign.center),
+      ),
+    );
+    byte.addAll(
+      generator.text(
+        'yukarıdaki QR kodu okutunuz.'.withoutDiacriticalMarks(),
+        styles: const PosStyles(align: PosAlign.center),
+      ),
+    );
+  }
+
+  Future<void> addQR(List<int> byte, String link, {double size = 150}) async {
+    try {
+      /// ilk qr kodu düzgün çıkartmadığı için ilk önce küçük bir qr code basıyoruz
+      final tempUiImg = await QrPainter(
+        data: link,
+        version: QrVersions.auto,
+        gapless: true,
+      ).toImageData(2);
+      byte.addAll(generator.image(img.decodeImage(tempUiImg!.buffer.asUint8List())!));
+
+      final uiImg = await QrPainter(
+        data: link,
+        version: QrVersions.auto,
+        gapless: true,
+      ).toImageData(size);
+      final image = img.decodeImage(uiImg!.buffer.asUint8List());
+      byte.addAll(generator.image(image!));
+    } catch (e) {
+      byte.addAll(
+        generator.text(
+          link.withoutDiacriticalMarks(),
+          styles: const PosStyles(align: PosAlign.center),
+        ),
+      );
+    }
   }
 
   Future<void> add3PartLogo(List<int> byte, String? clientPointId) async {
