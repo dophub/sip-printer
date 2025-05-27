@@ -462,7 +462,7 @@ class SunmiPrinterHeader {
         await SunmiPrinter.line();
         await SunmiPrinter.lineWrap(1);
         await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
-        await SunmiPrinter.printQRCode('https://sorgula.turkcellesirket.com/earsiv/7710617226/SAS2025000035290/1,00', size: 4);
+        await SunmiPrinter.printQRCode(invoiceLink, size: 4);
         await SunmiPrinter.printText(
           'E-Belgeye erişmek için'.withoutDiacriticalMarks(),
           style: SunmiStyle(
