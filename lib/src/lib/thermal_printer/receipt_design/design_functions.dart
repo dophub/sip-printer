@@ -32,12 +32,11 @@ abstract class DesignFunctions {
     addCenterText(byte, title, width: PosTextSize.size2, height: PosTextSize.size2, bold: true);
   }
 
-  void addHeader(
-    List<int> byte,
-    PrinterQueueResponsePrintDataModel printData, {
-    bool printTableNo = true,
-    bool printPayment = false,
-  }) {
+  void addHeader(List<int> byte,
+      PrinterQueueResponsePrintDataModel printData, {
+        bool printTableNo = true,
+        bool printPayment = false,
+      }) {
     if (printData.paymentModelId == PaymentModelID.PRE.name) {
       /// Sıra numarası ------------------------------------------------------------------
       if (printData.numberOfService != null) {
@@ -53,7 +52,9 @@ abstract class DesignFunctions {
       }
 
       /// service type ------------------------------------------------------------------
-      final String txt = printData.serviceDeliveryType?.enumFromString(TableServiceType.values)?.title ?? 'null';
+      final String txt = printData.serviceDeliveryType
+          ?.enumFromString(TableServiceType.values)
+          ?.title ?? 'null';
       byte.addAll(
         generator.row([
           PosColumn(
@@ -90,13 +91,12 @@ abstract class DesignFunctions {
     }
   }
 
-  void addOrderHeader(
-    List<int> byte,
-    PrinterQuequeResponseOrderModel order, {
-    bool printPayment = true,
-    printCustomerPhoneNo = false,
-    printCustomerAddress = false,
-  }) {
+  void addOrderHeader(List<int> byte,
+      PrinterQuequeResponseOrderModel order, {
+        bool printPayment = true,
+        printCustomerPhoneNo = false,
+        printCustomerAddress = false,
+      }) {
     /// payment type ------------------------------------------------------------------
     if (printPayment) {
       byte.addAll(
@@ -111,8 +111,8 @@ abstract class DesignFunctions {
       final String isPayedStr = order.paymentInfo?.isOnlinePayment == null
           ? 'null'
           : order.paymentInfo!.isOnlinePayment == true
-              ? 'Yapıldı'
-              : 'Yapılmadı';
+          ? 'Yapıldı'
+          : 'Yapılmadı';
       byte.addAll(
         generator.row([
           PosColumn(
@@ -140,7 +140,9 @@ abstract class DesignFunctions {
     /// order code ------------------------------------------------------------------
     /// sipariş numarasının son 4 hanesi random sayıdır
     final String code = order.orderNumber ?? '';
-    if (code.trim().isNotEmpty) {
+    if (code
+        .trim()
+        .isNotEmpty) {
       byte.addAll(
         generator.row([
           PosColumn(
@@ -224,7 +226,8 @@ abstract class DesignFunctions {
     try {
       int leftColumnMaxChar = paperSize == PaperSize.mm58 ? 16 : 24;
 
-      void _add(String col1, String col2, [String emptyStr = '', bool bold = false]) => byte.addAll(
+      void _add(String col1, String col2, [String emptyStr = '', bool bold = false]) =>
+          byte.addAll(
             generator.row([
               PosColumn(
                 text: emptyStr + col1.withoutDiacriticalMarks(),
@@ -417,13 +420,12 @@ abstract class DesignFunctions {
     byte.addAll(generator.emptyLines(1));
   }
 
-  void addCenterText(
-    List<int> byte,
-    String title, {
-    PosTextSize height = PosTextSize.size1,
-    PosTextSize width = PosTextSize.size1,
-    bool bold = false,
-  }) {
+  void addCenterText(List<int> byte,
+      String title, {
+        PosTextSize height = PosTextSize.size1,
+        PosTextSize width = PosTextSize.size1,
+        bool bold = false,
+      }) {
     /// slip title ------------------------------------------------------------------
     byte.addAll(
       generator.row([
@@ -522,8 +524,9 @@ abstract class DesignFunctions {
     );
   }
 
-  Future<void> addQR(List<int> byte, String link, {double size = 150}) async {
+  Future<void> addQR(List<int> byte, String link, {double size = 300}) async {
     try {
+
       /// ilk qr kodu düzgün çıkartmadığı için ilk önce küçük bir qr code basıyoruz
       final tempUiImg = await QrPainter(
         data: link,
