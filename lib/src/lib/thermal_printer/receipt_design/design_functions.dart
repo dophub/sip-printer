@@ -577,8 +577,8 @@ abstract class DesignFunctions {
       final Uint8List imageBytes = data.buffer.asUint8List();
       final decodedImage = img.decodeImage(imageBytes)!;
       final grayscaleImage = img.grayscale(decodedImage);
-      final _imageRaster = generator.imageRaster(grayscaleImage, align: PosAlign.center);
-      byte.addAll(_imageRaster);
+      final imageRaster = generator.imageRaster(grayscaleImage, align: PosAlign.center);
+      byte.addAll(imageRaster);
     } catch (e) {
       addReceiptTitle(byte, clientPointId!);
     }

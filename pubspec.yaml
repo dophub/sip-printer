@@ -20,6 +20,7 @@ dependencies:
   intl: any
   collection: any
   qr_flutter: ^4.1.0
+  print_usb: ^0.0.3
 
   sip_models:
     git:
