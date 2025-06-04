@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:print_usb/model/usb_device.dart';
+import 'package:print_usb/print_usb.dart';
 import 'package:sip_models/ri_enum.dart';
 import 'package:sip_models/ri_models.dart';
 import 'package:sip_printer/src/lib/thermal_printer/receipt_design/receipt_design.dart';
@@ -121,16 +124,29 @@ class ThermalPrinterManager {
         await service.disconnect();
         if (printStatus != NetworkPrintResult.success) throw 'Yazıcıya çıktı gönderilemedi';
       } else if (config is USBPrinterModel) {
-        final usbPrinter = UsbPrinter();
-        final connectStatus = await usbPrinter.connect(
-          vendorId: int.parse(config.vendorId!),
-          productId: int.parse(config.productId!),
-        );
-        if (connectStatus != true) throw 'Yazıcı bağlantı hatası';
+        if (Platform.isWindows) {
+          bool connected = await PrintUsb.connect(name: config.name!);
 
-        // await Future.delayed(const Duration(milliseconds: 100));
-        await usbPrinter.printBytes(bytes);
-        // await usbPrinter.close();
+          if (connected) {
+            bool success = await PrintUsb.printBytes(
+              bytes: bytes,
+              device: UsbDevice(name: config.name!, model: '', isDefault: true, available: true),
+            );
+
+            if (!success) throw 'Print failed.';
+          }
+        } else {
+          final usbPrinter = UsbPrinter();
+          final connectStatus = await usbPrinter.connect(
+            vendorId: int.parse(config.vendorId!),
+            productId: int.parse(config.productId!),
+          );
+          if (connectStatus != true) throw 'Yazıcı bağlantı hatası';
+
+          // await Future.delayed(const Duration(milliseconds: 100));
+          await usbPrinter.printBytes(bytes);
+          // await usbPrinter.close();
+        }
       }
     } catch (e) {
       rethrow;
@@ -138,8 +154,15 @@ class ThermalPrinterManager {
   }
 
   Future<List<USBPrinterModel>> getConnectedUsbPrinters() async {
-    final list = await UsbPrinter().getUSBDeviceList();
-    return USBPrinterModel().jsonParserByMap(list);
+    if (Platform.isWindows) {
+      final list = await PrintUsb.getList();
+      return list
+          .map<USBPrinterModel>((e) => USBPrinterModel(name: e.name, vendorId: e.name, productId: e.name))
+          .toList();
+    } else {
+      final list = await UsbPrinter().getUSBDeviceList();
+      return USBPrinterModel().jsonParserByMap(list);
+    }
   }
 
   PaperSize _printerPaperTypeToPaperSize(PrinterPaperTypeEnum type) {
