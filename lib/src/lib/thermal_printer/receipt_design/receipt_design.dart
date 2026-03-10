@@ -297,8 +297,21 @@ class ReceiptDesign extends DesignFunctions {
       addReceiptTitle(byte, "MUTFAK FİŞİ");
       addEmptyLines(byte);
 
+      /// Sipariş Türü ------------------------------------------------------------------
+      String orderPoint = activeOrderList.orderInfo?.orderPointId?.enumFromString(OrderPoint.values)?.title ??
+          activeOrderList.orderInfo?.orderPointId ??
+          '-';
+
+      if (activeOrderList.orderInfo?.paymentModelId == PaymentModelID.PRE.name) {
+        orderPoint = '$orderPoint (Self Servis)';
+      }
+
+      addTowColumn(byte, 'Sipariş Türü: ', orderPoint);
+
       /// Table name ------------------------------------------------------------------
-      addTowColumn(byte, 'Masa: ', activeOrderList.orderInfo?.tableName ?? '');
+      if (activeOrderList.orderInfo?.orderPointId == OrderPoint.TABLE.name) {
+        addTowColumn(byte, 'Masa: ', activeOrderList.orderInfo?.tableName ?? '-');
+      }
 
       /// sipariş numarasının son 4 hanesi random sayıdır
       final String id = '${activeOrderList.orderId!}${(Random().nextInt(10000) + 1000)}';
