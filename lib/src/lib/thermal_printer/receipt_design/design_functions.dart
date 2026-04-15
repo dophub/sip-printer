@@ -29,7 +29,7 @@ abstract class DesignFunctions {
   }
 
   void addReceiptTitle(List<int> byte, String title) {
-    addCenterText(byte, title, width: PosTextSize.size2, height: PosTextSize.size2, bold: true);
+    addCenterText(byte, title, width: PosTextSize.size2, height: PosTextSize.size2);
   }
 
   void addHeader(
@@ -45,8 +45,15 @@ abstract class DesignFunctions {
           generator.row([
             PosColumn(
               width: 12,
-              text: _createTowColumn('Sıra Numarası: ', printData.numberOfService.toString()),
-              styles: const PosStyles(align: PosAlign.left, width: PosTextSize.size1),
+              text: _createTowColumn(
+                'Sıra Numarası: ',
+                printData.numberOfService.toString(),
+              ),
+              styles: const PosStyles(
+                bold: true,
+                align: PosAlign.left,
+                width: PosTextSize.size1,
+              ),
             ),
           ]),
         );
@@ -59,7 +66,11 @@ abstract class DesignFunctions {
           PosColumn(
             width: 12,
             text: _createTowColumn('Servis Tipi: ', txt),
-            styles: const PosStyles(align: PosAlign.left, width: PosTextSize.size1),
+            styles: const PosStyles(
+              align: PosAlign.left,
+              width: PosTextSize.size1,
+              bold: true,
+            ),
           ),
         ]),
       );
@@ -71,7 +82,11 @@ abstract class DesignFunctions {
         PosColumn(
           width: 12,
           text: _createTowColumn('Masa: ', (printData.tableInfo?.tableName).toString()),
-          styles: const PosStyles(align: PosAlign.left, width: PosTextSize.size1),
+          styles: const PosStyles(
+            align: PosAlign.left,
+            width: PosTextSize.size1,
+            bold: true,
+          ),
         ),
       ]));
     }
@@ -83,7 +98,11 @@ abstract class DesignFunctions {
           PosColumn(
             width: 12,
             text: _createTowColumn('Ödeme Yöntemi: ', "${printData.paymentType}".withoutDiacriticalMarks()),
-            styles: const PosStyles(align: PosAlign.left, width: PosTextSize.size1),
+            styles: const PosStyles(
+              align: PosAlign.left,
+              width: PosTextSize.size1,
+              bold: true,
+            ),
           ),
         ]),
       );
@@ -104,7 +123,11 @@ abstract class DesignFunctions {
           PosColumn(
             width: 12,
             text: _createTowColumn('Ödeme Yöntemi: ', "${order.paymentInfo?.name}".withoutDiacriticalMarks()),
-            styles: const PosStyles(align: PosAlign.left, width: PosTextSize.size1),
+            styles: const PosStyles(
+              align: PosAlign.left,
+              width: PosTextSize.size1,
+              bold: true,
+            ),
           ),
         ]),
       );
@@ -118,7 +141,11 @@ abstract class DesignFunctions {
           PosColumn(
             width: 12,
             text: _createTowColumn('Ödeme Durumu: ', isPayedStr),
-            styles: const PosStyles(align: PosAlign.left, width: PosTextSize.size1),
+            styles: const PosStyles(
+              align: PosAlign.left,
+              width: PosTextSize.size1,
+              bold: true,
+            ),
           ),
         ]),
       );
@@ -132,7 +159,11 @@ abstract class DesignFunctions {
         PosColumn(
           width: 12,
           text: _createTowColumn('Sipariş No: ', id),
-          styles: const PosStyles(align: PosAlign.left, width: PosTextSize.size1),
+          styles: const PosStyles(
+            align: PosAlign.left,
+            width: PosTextSize.size1,
+            bold: true,
+          ),
         ),
       ]),
     );
@@ -146,7 +177,11 @@ abstract class DesignFunctions {
           PosColumn(
             width: 12,
             text: _createTowColumn('Sipariş kodu: ', code),
-            styles: const PosStyles(align: PosAlign.left, width: PosTextSize.size1),
+            styles: const PosStyles(
+              align: PosAlign.left,
+              width: PosTextSize.size1,
+              bold: true,
+            ),
           ),
         ]),
       );
@@ -159,7 +194,11 @@ abstract class DesignFunctions {
         PosColumn(
           width: 12,
           text: _createTowColumn('Tarih: ', date),
-          styles: const PosStyles(align: PosAlign.left, width: PosTextSize.size1),
+          styles: const PosStyles(
+            align: PosAlign.left,
+            width: PosTextSize.size1,
+            bold: true,
+          ),
         ),
       ]),
     );
@@ -177,7 +216,11 @@ abstract class DesignFunctions {
         PosColumn(
           width: 12,
           text: _createTowColumn('Müşteri: ', customerName),
-          styles: const PosStyles(align: PosAlign.left, width: PosTextSize.size1),
+          styles: const PosStyles(
+            align: PosAlign.left,
+            width: PosTextSize.size1,
+            bold: true,
+          ),
         ),
       ]),
     );
@@ -189,7 +232,11 @@ abstract class DesignFunctions {
           PosColumn(
             width: 12,
             text: _createTowColumn('Telefon No: ', '${order.customer?.phoneNumber}'),
-            styles: const PosStyles(align: PosAlign.left, width: PosTextSize.size1),
+            styles: const PosStyles(
+              align: PosAlign.left,
+              width: PosTextSize.size1,
+              bold: true,
+            ),
           ),
         ]),
       );
@@ -203,7 +250,15 @@ abstract class DesignFunctions {
         maxLineCharacterCount,
       );
       for (var address in addressStrings) {
-        byte.addAll(generator.text(address, styles: const PosStyles(align: PosAlign.left)));
+        byte.addAll(
+          generator.text(
+            address,
+            styles: const PosStyles(
+              align: PosAlign.left,
+              bold: true,
+            ),
+          ),
+        );
       }
     }
 
@@ -215,7 +270,15 @@ abstract class DesignFunctions {
         maxLineCharacterCount,
       );
       for (var orderNote in orderNoteStrings) {
-        byte.addAll(generator.text(orderNote, styles: const PosStyles(align: PosAlign.left, bold: true)));
+        byte.addAll(
+          generator.text(
+            orderNote,
+            styles: const PosStyles(
+              align: PosAlign.left,
+              bold: true,
+            ),
+          ),
+        );
       }
     }
   }
@@ -253,12 +316,14 @@ abstract class DesignFunctions {
             tempString = "$tempString${itemNames.title!}, ";
           }
 
-          tempString = tempString.substring(0, tempString.length - 2);
-          List<String> optionsFitter = _orderDetailFitter(tempString, leftColumnMaxChar);
-          titleFitter.addAll(optionsFitter);
+          if (tempString.isNotEmpty) {
+            tempString = tempString.substring(0, tempString.length - 2);
+            List<String> optionsFitter = _orderDetailFitter(tempString, leftColumnMaxChar);
+            titleFitter.addAll(optionsFitter);
 
-          for (String orderString in titleFitter) {
-            _add(orderString, '', emptyStr);
+            for (String orderString in titleFitter) {
+              _add(orderString, '', emptyStr);
+            }
           }
         }
 
@@ -267,7 +332,7 @@ abstract class DesignFunctions {
         for (var element in itemsFitted) {
           if (element == itemsFitted.first) {
             if (items[i].status!.statusCode == OrderItemStatusId.CANCEL.name) {
-              addCenterText(byte, 'Iptal Edildi', bold: true);
+              addCenterText(byte, 'Iptal Edildi');
             }
             final String totalPrice;
             if (items[i].totalPrice != null) {
@@ -347,7 +412,11 @@ abstract class DesignFunctions {
           PosColumn(
             width: 12,
             text: _createTowColumn('Bahşiş: ', totalTipAmount),
-            styles: const PosStyles(align: PosAlign.left, width: PosTextSize.size1),
+            styles: const PosStyles(
+              align: PosAlign.left,
+              width: PosTextSize.size1,
+              bold: true,
+            ),
           ),
         ]),
       );
@@ -361,7 +430,11 @@ abstract class DesignFunctions {
           PosColumn(
             width: 12,
             text: _createTowColumn('Masaya Servis: ', tableServiceAmount),
-            styles: const PosStyles(align: PosAlign.left, width: PosTextSize.size1),
+            styles: const PosStyles(
+              align: PosAlign.left,
+              width: PosTextSize.size1,
+              bold: true,
+            ),
           ),
         ]),
       );
@@ -379,7 +452,11 @@ abstract class DesignFunctions {
         PosColumn(
           width: 12,
           text: _createTowColumn('TOPLAM TUTAR: ', '${totalAmount.toStringAsFixed(2)} TL'),
-          styles: const PosStyles(align: PosAlign.left, width: PosTextSize.size1),
+          styles: const PosStyles(
+            align: PosAlign.left,
+            width: PosTextSize.size1,
+            bold: true,
+          ),
         ),
       ]),
     );
@@ -393,7 +470,11 @@ abstract class DesignFunctions {
         PosColumn(
           width: 10,
           text: (dealerIndo?.dealerName ?? SipPrinter.instance.headerTitle).toString().withoutDiacriticalMarks(),
-          styles: const PosStyles(align: PosAlign.center, width: PosTextSize.size1),
+          styles: const PosStyles(
+            align: PosAlign.center,
+            width: PosTextSize.size1,
+            bold: true,
+          ),
         ),
         PosColumn(width: 1, text: '', styles: const PosStyles(align: PosAlign.left)),
       ]),
@@ -406,7 +487,11 @@ abstract class DesignFunctions {
         PosColumn(
           width: 10,
           text: (dealerIndo?.address ?? SipPrinter.instance.footerTitle).toString().withoutDiacriticalMarks(),
-          styles: const PosStyles(align: PosAlign.center, width: PosTextSize.size1),
+          styles: const PosStyles(
+            align: PosAlign.center,
+            width: PosTextSize.size1,
+            bold: true,
+          ),
         ),
         PosColumn(width: 1, text: '', styles: const PosStyles(align: PosAlign.left)),
       ]),
@@ -422,7 +507,6 @@ abstract class DesignFunctions {
     String title, {
     PosTextSize height = PosTextSize.size1,
     PosTextSize width = PosTextSize.size1,
-    bool bold = false,
   }) {
     /// slip title ------------------------------------------------------------------
     byte.addAll(
@@ -433,7 +517,7 @@ abstract class DesignFunctions {
           text: title.withoutDiacriticalMarks(),
           styles: PosStyles(
             align: PosAlign.center,
-            bold: bold,
+            bold: true,
             width: width,
             height: height,
           ),
@@ -500,7 +584,12 @@ abstract class DesignFunctions {
         PosColumn(
           width: 12,
           text: _createTowColumn(col1, col2),
-          styles: const PosStyles(align: PosAlign.left, width: PosTextSize.size1),
+          styles: const PosStyles(
+            align: PosAlign.left,
+            width: PosTextSize.size1,
+            height: PosTextSize.size1,
+            bold: true,
+          ),
         ),
       ]),
     );
