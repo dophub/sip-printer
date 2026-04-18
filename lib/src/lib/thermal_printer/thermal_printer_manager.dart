@@ -103,6 +103,16 @@ class ThermalPrinterManager {
     }
   }
 
+  /// print kitchen order
+  Future<List<int>> createReceiptForKitchenOrderByWidget(PrinterPaperTypeEnum paperSize, KitchenOrderModel activeOrderList) async {
+    try {
+      final type = _printerPaperTypeToPaperSize(paperSize);
+      return await ReceiptDesign(Generator(type, _profile), type).printKitchenOrderByWidget(activeOrderList);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<List<int>> createReceiptForTest(PrinterPaperTypeEnum paperSize) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
