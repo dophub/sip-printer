@@ -1,8 +1,9 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sip_models/enum.dart';
 import 'package:sip_models/request.dart';
@@ -10,14 +11,17 @@ import 'package:sip_models/ri_enum.dart';
 import 'package:sip_printer/src/extanstion/extension_string.dart';
 import 'package:sip_printer/src/extanstion/general_extenstion.dart';
 import 'package:sip_models/ri_models.dart';
-import 'package:image/image.dart' as img;
-
+import 'package:image/image.dart' as img show Image, decodeImage, grayscale;
 import '../../../sip_printer.dart';
+import 'package:flutter/rendering.dart'
+    show RenderRepaintBoundary, PipelineOwner, RenderView, RenderPositionedBox, ViewConfiguration;
+import 'dart:ui' show ImageByteFormat;
 
 abstract class DesignFunctions {
   late final int maxLineCharacterCount;
   late final PaperSize paperSize;
   final Generator generator;
+  String fontFamily = 'Poppins';
 
   DesignFunctions(this.generator, PaperSize? _paperSize) {
     paperSize = _paperSize ?? PaperSize.mm80;
@@ -30,6 +34,10 @@ abstract class DesignFunctions {
 
   void addReceiptTitle(List<int> byte, String title) {
     addCenterText(byte, title, width: PosTextSize.size2, height: PosTextSize.size2);
+  }
+
+  void addReceiptTitleWidget(List<Widget> list, String title) {
+    addCenterTextWidget(list, title, fontWeight: FontWeight.bold, fontSize: 50);
   }
 
   void addHeader(
@@ -403,6 +411,170 @@ abstract class DesignFunctions {
     }
   }
 
+  Widget createColumnFromOrderDetailWidget(
+    List<PrinterQueueResponseOrderOrderItemModel> items, {
+    bool isPriceVisible = true,
+  }) {
+    const fontFamily = 'Poppins';
+
+    List<Widget> children = [];
+
+    Widget _row(
+      String col1,
+      String? col2, {
+      FontWeight fontWeight = FontWeight.w500,
+      double leftPadding = 0,
+    }) {
+      return Padding(
+        padding: EdgeInsets.only(left: leftPadding),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 7,
+              child: Text(
+                col1,
+                style: TextStyle(
+                  fontSize: 36,
+                  fontFamily: fontFamily,
+                  fontWeight: fontWeight,
+                  height: 1,
+                ),
+              ),
+            ),
+            if (col2 != null)
+              Expanded(
+                flex: 5,
+                child: Text(
+                  col2,
+                  textAlign: TextAlign.left,
+                  style: const TextStyle(
+                    fontSize: 36,
+                    fontFamily: fontFamily,
+                    fontWeight: FontWeight.w500,
+                    height: 1,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
+    List<Widget> _addOption(String title, List<OrderOptionItem>? items, double leftPadding) {
+      if (items?.isNotEmpty != true) return [];
+      List<Widget> optionWidgets = [];
+      optionWidgets.add(
+        _row('$title: ', null, fontWeight: FontWeight.w600, leftPadding: leftPadding),
+      );
+      String tempString = "";
+      for (var item in items!) {
+        tempString += "${item.title}, ";
+      }
+      if (tempString.isNotEmpty) {
+        tempString = tempString.substring(0, tempString.length - 2);
+        optionWidgets.add(_row(tempString, null, leftPadding: leftPadding));
+      }
+
+      return optionWidgets;
+    }
+
+    for (var item in items) {
+      final countStr = '${item.count}x';
+      // String emptyStr = ' ' * countStr.length;
+
+      /// ITEM TITLE
+      if (item.status!.statusCode == OrderItemStatusId.CANCEL.name) {
+        children.add(
+          const Center(
+            child: Text(
+              'İptal Edildi',
+              style: TextStyle(
+                fontSize: 36,
+                fontFamily: fontFamily,
+                fontWeight: FontWeight.bold,
+                height: 1,
+              ),
+            ),
+          ),
+        );
+      }
+
+      /// item Title - Price -----------------------------------------------
+      String? totalPrice;
+      if (isPriceVisible == true) {
+        totalPrice = item.totalPrice != null ? "${item.totalPrice!.toStringAsFixed(2)} TL" : null;
+      }
+
+      children.add(
+        _row('$countStr${item.itemTitle!}', totalPrice, fontWeight: FontWeight.bold),
+      );
+      children.add(const SizedBox(height: 10));
+
+      /// options -----------------------------------------------
+      if (item.options != null) {
+        /// PRODUCT -----------------------------------------------
+        if (item.itemTypeId == ItemType.PRODUCT.name) {
+          /// options ----------------------------------------------
+          for (var option in item.options!) {
+            if (option.items?.isNotEmpty == true) {
+              /// options item -----------------------------------------------
+              children.addAll(
+                _addOption(option.title!, option.items, countStr.length * 8),
+              );
+
+              children.add(const SizedBox(height: 10));
+            }
+          }
+        } else if (item.itemTypeId == ItemType.PROMOTION_MENU.name) {
+          /// PROMOTION_MENU -----------------------------------------------
+          for (var option in item.options!) {
+            /// section title -----------------------------------------------
+            children.add(_row(
+              '-${option.sectionTitle!}:',
+              null,
+              fontWeight: FontWeight.w700,
+              leftPadding: countStr.length * 8,
+            ));
+
+            /// section product name -----------------------------------------------
+            children.add(_row(
+              option.sectionItem!.productName!,
+              null,
+              leftPadding: (countStr.length + 3) * 8,
+            ));
+
+            /// options -----------------------------------------------
+            for (var sectionOption in option.sectionItem!.options!) {
+              /// options item -----------------------------------------------
+              children.addAll(
+                _addOption(sectionOption.title!, sectionOption.items, (countStr.length + 3) * 8),
+              );
+            }
+            children.add(const SizedBox(height: 10));
+          }
+        }
+      }
+
+      /// item Note -----------------------------------------------
+      if (item.itemNote?.isNotEmpty == true) {
+        children.add(_row(
+          'Ürün Notu: ${item.itemNote!}',
+          null,
+          fontWeight: FontWeight.bold,
+          leftPadding: countStr.length * 8,
+        ));
+      }
+
+      children.add(const SizedBox(height: 24));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
+  }
+
   void addPaymentDetail(List<int> byte, PrinterQueueResponsePrintDataModel printData) {
     /// tip amount ------------------------------------------------------------------
     if (printData.totalTipAmount != null && printData.totalTipAmount != 0) {
@@ -502,6 +674,10 @@ abstract class DesignFunctions {
     byte.addAll(generator.emptyLines(1));
   }
 
+  void addEmptyLinesWidget(List<Widget> list) {
+    list.add(const Text(''));
+  }
+
   void addCenterText(
     List<int> byte,
     String title, {
@@ -524,6 +700,26 @@ abstract class DesignFunctions {
         ),
         PosColumn(width: 1, text: '', styles: const PosStyles(align: PosAlign.left)),
       ]),
+    );
+  }
+
+  void addCenterTextWidget(
+    List<Widget> list,
+    String title, {
+    double? fontSize,
+    FontWeight? fontWeight,
+  }) {
+    list.add(
+      Text(
+        title,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontFamily: fontFamily,
+          fontWeight: fontWeight,
+          height: 1,
+        ),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 
@@ -563,6 +759,20 @@ abstract class DesignFunctions {
       ),
     );
   }
+
+  void addSeparatorWidget(List<Widget> list) => list.add(
+        Text(
+          '---------------------------------------------------------',
+          style: TextStyle(
+            fontSize: 20,
+            fontFamily: fontFamily,
+            fontWeight: FontWeight.bold,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.clip,
+          textAlign: TextAlign.center,
+        ),
+      );
 
   List<String> _orderDetailFitter(String orderDetail, int maxLength) {
     List<String> tempList = [""];
@@ -668,5 +878,82 @@ abstract class DesignFunctions {
     } catch (e) {
       addReceiptTitle(byte, clientPointId!);
     }
+  }
+
+  addRowWidget(String txt1, String txt2) => Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 4,
+            child: Text(
+              txt1,
+              style: TextStyle(
+                fontSize: 36,
+                fontFamily: fontFamily,
+                fontWeight: FontWeight.w500,
+                height: 1,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 6,
+            child: Text(
+              txt2,
+              style: TextStyle(
+                fontSize: 36,
+                fontFamily: fontFamily,
+                fontWeight: FontWeight.w500,
+                height: 1,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      );
+
+  Future<img.Image> createImageFromWidget(Widget widget) async {
+    final repaintBoundary = RenderRepaintBoundary();
+    final pipelineOwner = PipelineOwner();
+    final buildOwner = BuildOwner(focusManager: FocusManager());
+
+    final renderView = RenderView(
+      view: WidgetsBinding.instance.platformDispatcher.views.first,
+      child: RenderPositionedBox(
+        alignment: Alignment.center,
+        child: repaintBoundary,
+      ),
+      configuration: const ViewConfiguration(
+        logicalConstraints: BoxConstraints(maxWidth: 576, minWidth: 576),
+        physicalConstraints: BoxConstraints(maxWidth: 576, minWidth: 576),
+        devicePixelRatio: 3.0,
+      ),
+    );
+
+    pipelineOwner.rootNode = renderView;
+    renderView.prepareInitialFrame();
+
+    final rootElement = RenderObjectToWidgetAdapter<RenderBox>(
+      container: repaintBoundary,
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: Material(
+          child: widget,
+        ),
+      ),
+    ).attachToRenderTree(buildOwner);
+
+    buildOwner.buildScope(rootElement);
+    buildOwner.finalizeTree();
+
+    pipelineOwner.flushLayout();
+    pipelineOwner.flushCompositingBits();
+    pipelineOwner.flushPaint();
+
+    final image = await repaintBoundary.toImage();
+    final byteData = await image.toByteData(format: ImageByteFormat.png);
+
+    final bytes = byteData!.buffer.asUint8List();
+
+    return img.decodeImage(bytes)!;
   }
 }

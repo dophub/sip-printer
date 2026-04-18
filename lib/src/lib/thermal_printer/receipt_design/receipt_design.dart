@@ -1,6 +1,10 @@
 import 'dart:math';
+import 'dart:typed_data' show Uint8List;
+import 'dart:ui' show ImageByteFormat;
 
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart'
+    show RenderRepaintBoundary, PipelineOwner, RenderView, RenderPositionedBox, ViewConfiguration;
 import 'package:sip_models/enum.dart';
 import 'package:sip_models/ri_enum.dart';
 import 'package:sip_printer/src/extanstion/date_time_extension.dart';
@@ -336,6 +340,68 @@ class ReceiptDesign extends DesignFunctions {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<List<int>> printKitchenOrderByWidget(KitchenOrderModel activeOrderList) async {
+    final List<Widget> widgetList = [];
+
+    /// slip title ------------------------------------------------------------------
+    addReceiptTitleWidget(widgetList, 'MUTFAK FİŞİ');
+    addEmptyLinesWidget(widgetList);
+
+    /// Sipariş Türü ------------------------------------------------------------------
+    String orderPoint = activeOrderList.orderInfo?.orderPointId?.enumFromString(OrderPoint.values)?.title ??
+        activeOrderList.orderInfo?.orderPointId ??
+        '-';
+
+    if (activeOrderList.orderInfo?.paymentModelId == PaymentModelID.PRE.name) {
+      orderPoint = '$orderPoint (Self Servis)';
+    }
+
+    widgetList.add(
+      addRowWidget('Sipariş Türü: ', orderPoint),
+    );
+
+    /// Table name ------------------------------------------------------------------
+    if (activeOrderList.orderInfo?.orderPointId == OrderPoint.TABLE.name) {
+      widgetList.add(
+        addRowWidget('Masa: ', activeOrderList.orderInfo?.tableName ?? '-'),
+      );
+    }
+
+    /// sipariş numarasının son 4 hanesi random sayıdır
+    final String id = '${activeOrderList.orderId!}${(Random().nextInt(10000) + 1000)}';
+    widgetList.add(
+      addRowWidget('Sipariş No: ', id),
+    );
+    addSeparatorWidget(widgetList);
+
+    /// customer name ------------------------------------------------------------------
+    String customerName = '${activeOrderList.firstName ?? ''} ${activeOrderList.lastName ?? ''}';
+    if (customerName.trim().isNotEmpty) {
+      widgetList.add(
+        addRowWidget('Müşteri: ', customerName),
+      );
+      addSeparatorWidget(widgetList);
+    }
+
+    /// prdocut detail ------------------------------------------------------------------
+    widgetList.add(createColumnFromOrderDetailWidget(
+      activeOrderList.products!.map((e) => e.toPrinterQueueResponseOrderOrderItemModel()).toList(),
+    ));
+
+    final image = await createImageFromWidget(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: widgetList,
+      ),
+    );
+
+    List<int> byte = [];
+    byte += generator.image(image);
+    byte += generator.cut();
+
+    return byte;
   }
 
   Future<List<int>> testTicket() async {
