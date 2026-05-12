@@ -68,20 +68,22 @@ abstract class DesignFunctions {
       }
 
       /// service type ------------------------------------------------------------------
-      final String txt = printData.serviceDeliveryType?.enumFromString(TableServiceType.values)?.title ?? 'null';
-      byte.addAll(
-        generator.row([
-          PosColumn(
-            width: 12,
-            text: _createTowColumn('Servis Tipi: ', txt),
-            styles: const PosStyles(
-              align: PosAlign.left,
-              width: PosTextSize.size1,
-              bold: true,
+      final String? txt = printData.serviceDeliveryType?.enumFromString(TableServiceType.values)?.title;
+      if (txt != null) {
+        byte.addAll(
+          generator.row([
+            PosColumn(
+              width: 12,
+              text: _createTowColumn('Servis Tipi: ', txt),
+              styles: const PosStyles(
+                align: PosAlign.left,
+                width: PosTextSize.size1,
+                bold: true,
+              ),
             ),
-          ),
-        ]),
-      );
+          ]),
+        );
+      }
     }
 
     /// table no ------------------------------------------------------------------

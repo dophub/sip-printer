@@ -349,23 +349,37 @@ class ReceiptDesign extends DesignFunctions {
     addReceiptTitleWidget(widgetList, 'MUTFAK FİŞİ');
     addEmptyLinesWidget(widgetList);
 
-    /// Sipariş Türü ------------------------------------------------------------------
+    /// Sipariş Kaynağı ------------------------------------------------------------------
     String orderPoint = activeOrderList.orderInfo?.orderPointId?.enumFromString(OrderPoint.values)?.title ??
         activeOrderList.orderInfo?.orderPointId ??
         '-';
 
-    if (activeOrderList.orderInfo?.paymentModelId == PaymentModelID.PRE.name) {
-      orderPoint = '$orderPoint (Self Servis)';
-    }
-
     widgetList.add(
-      addRowWidget('Sipariş Türü: ', orderPoint),
+      addRowWidget('Sipariş Noktsı: ', orderPoint),
     );
 
-    /// Table name ------------------------------------------------------------------
-    if (activeOrderList.orderInfo?.orderPointId == OrderPoint.TABLE.name) {
+    if (activeOrderList.orderInfo?.paymentModelId == PaymentModelID.PRE.name) {
+      /// Sipariş Türü ------------------------------------------------------------------
+      widgetList.add(
+        addRowWidget('Sipariş Türü: ', 'Self Servis'),
+      );
+
+      /// Sıra numarası ------------------------------------------------------------------
+      if (activeOrderList.orderInfo!.numberOfService != null) {
+        widgetList.add(
+          addRowWidget('Sıra Numarası: ', activeOrderList.orderInfo!.numberOfService.toString()),
+        );
+      }
+    } else if (activeOrderList.orderInfo?.orderPointId == OrderPoint.TABLE.name) {
+      /// Sipariş Adı ------------------------------------------------------------------
       widgetList.add(
         addRowWidget('Masa: ', activeOrderList.orderInfo?.tableName ?? '-'),
+      );
+    }
+
+    if (activeOrderList.orderDate != null) {
+      widgetList.add(
+        addRowWidget('Tarih: ', activeOrderList.orderDate!.formatDateTimeForTurkishDate()),
       );
     }
 
@@ -380,7 +394,7 @@ class ReceiptDesign extends DesignFunctions {
     String customerName = '${activeOrderList.firstName ?? ''} ${activeOrderList.lastName ?? ''}';
     if (customerName.trim().isNotEmpty) {
       widgetList.add(
-        addRowWidget('Müşteri: ', customerName),
+        addRowWidget('Müşteri: ', customerName.maskNullableSurname()),
       );
       addSeparatorWidget(widgetList);
     }
