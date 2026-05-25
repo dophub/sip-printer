@@ -1,10 +1,6 @@
 import 'dart:math';
-import 'dart:typed_data' show Uint8List;
-import 'dart:ui' show ImageByteFormat;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart'
-    show RenderRepaintBoundary, PipelineOwner, RenderView, RenderPositionedBox, ViewConfiguration;
 import 'package:sip_models/enum.dart';
 import 'package:sip_models/ri_enum.dart';
 import 'package:sip_printer/src/extanstion/date_time_extension.dart';
@@ -355,7 +351,7 @@ class ReceiptDesign extends DesignFunctions {
         '-';
 
     widgetList.add(
-      addRowWidget('Sipariş Noktsı: ', orderPoint),
+      addRowWidget('Sipariş Noktası: ', orderPoint),
     );
 
     if (activeOrderList.orderInfo?.paymentModelId == PaymentModelID.PRE.name) {
