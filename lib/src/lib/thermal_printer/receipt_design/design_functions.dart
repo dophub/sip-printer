@@ -67,6 +67,26 @@ abstract class DesignFunctions {
         );
       }
 
+      /// Pleksi numarası ------------------------------------------------------------------
+      if (printData.pleksiNumber != null) {
+        byte.addAll(
+          generator.row([
+            PosColumn(
+              width: 12,
+              text: _createTowColumn(
+                'Pleksi Numarası: ',
+                printData.pleksiNumber.toString(),
+              ),
+              styles: const PosStyles(
+                bold: true,
+                align: PosAlign.left,
+                width: PosTextSize.size1,
+              ),
+            ),
+          ]),
+        );
+      }
+
       /// service type ------------------------------------------------------------------
       final String? txt = printData.serviceDeliveryType?.enumFromString(TableServiceType.values)?.title;
       if (txt != null) {
