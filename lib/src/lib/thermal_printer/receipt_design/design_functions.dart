@@ -47,44 +47,19 @@ abstract class DesignFunctions {
     bool printPayment = false,
   }) {
     if (printData.paymentModelId == PaymentModelID.PRE.name) {
+
       /// Sıra numarası ------------------------------------------------------------------
       if (printData.numberOfService != null) {
-        byte.addAll(
-          generator.row([
-            PosColumn(
-              width: 12,
-              text: _createTowColumn(
-                'Sıra Numarası: ',
-                printData.numberOfService.toString(),
-              ),
-              styles: const PosStyles(
-                bold: true,
-                align: PosAlign.left,
-                width: PosTextSize.size1,
-              ),
-            ),
-          ]),
-        );
+        addReceiptTitle(byte, "Sıra Numarası");
+        addReceiptTitle(byte, printData.numberOfService.toString());
+        addEmptyLines(byte);
       }
 
       /// Pleksi numarası ------------------------------------------------------------------
       if (printData.pleksiNumber != null) {
-        byte.addAll(
-          generator.row([
-            PosColumn(
-              width: 12,
-              text: _createTowColumn(
-                'Pleksi Numarası: ',
-                printData.pleksiNumber.toString(),
-              ),
-              styles: const PosStyles(
-                bold: true,
-                align: PosAlign.left,
-                width: PosTextSize.size1,
-              ),
-            ),
-          ]),
-        );
+        addReceiptTitle(byte, "Pleksi Numarası");
+        addReceiptTitle(byte, printData.pleksiNumber.toString());
+        addEmptyLines(byte);
       }
 
       /// service type ------------------------------------------------------------------
