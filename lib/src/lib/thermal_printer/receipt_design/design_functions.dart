@@ -372,7 +372,7 @@ abstract class DesignFunctions {
     }
 
     /// create date ------------------------------------------------------------------
-    final date = DateFormat('dd.MM.yyyy HH:mm').format(order.recordDate ?? DateTime.now()).withoutDiacriticalMarks();
+    final date = DateFormat('dd.MM.yyyy HH:mm').format(order.recordDate ?? DateTime.now());
     widgetList.add(
       addRowWidget('Tarih: ', date),
     );
@@ -381,9 +381,9 @@ abstract class DesignFunctions {
     /// customer name ------------------------------------------------------------------
     final String customerName;
     if (order.orderPointId == OrderPoint.TABLE.name) {
-      customerName = order.nickName.maskNullableSurname().withoutDiacriticalMarks();
+      customerName = order.nickName.maskNullableSurname();
     } else {
-      customerName = order.customer!.nameSurname!.withoutDiacriticalMarks();
+      customerName = order.customer!.nameSurname!;
     }
     widgetList.add(
       addRowWidget('Müşteri: ', customerName),
