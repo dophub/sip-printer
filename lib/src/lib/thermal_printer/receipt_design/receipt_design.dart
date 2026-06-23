@@ -338,67 +338,27 @@ class ReceiptDesign extends DesignFunctions {
     }
   }
 
-  Future<List<int>> printKitchenOrderByWidget(KitchenOrderModel activeOrderList) async {
+  Future<List<int>> printKitchenOrderByWidget(PrinterQueueResponseModel printData) async {
     final List<Widget> widgetList = [];
 
     /// slip title ------------------------------------------------------------------
     addReceiptTitleWidget(widgetList, 'MUTFAK FİŞİ');
     addEmptyLinesWidget(widgetList);
 
-    /// Sipariş Kaynağı ------------------------------------------------------------------
-    String orderPoint = activeOrderList.orderInfo?.orderPointId?.enumFromString(OrderPoint.values)?.title ??
-        activeOrderList.orderInfo?.orderPointId ??
-        '-';
+    /// order header ------------------------------------------------------------------
+    addHeaderWidget(widgetList, printData.printData!);
 
-    widgetList.add(
-      addRowWidget('Sipariş Noktası: ', orderPoint),
-    );
+    /// Orders ------------------------------------------------------------------
+    for (var order in printData.printData!.orders!) {
+      /// order header ------------------------------------------------------------------
+      addOrderHeaderWidget(widgetList, order, printPayment: false);
+      addSeparatorWidget(widgetList);
 
-    if (activeOrderList.orderInfo?.paymentModelId == PaymentModelID.PRE.name) {
-      /// Sipariş Türü ------------------------------------------------------------------
-      widgetList.add(
-        addRowWidget('Sipariş Türü: ', 'Self Servis'),
-      );
+      /// order item ------------------------------------------------------------------
+      widgetList.add(createColumnFromOrderDetailWidget(order.items!, isPriceVisible: false));
 
-      /// Sıra numarası ------------------------------------------------------------------
-      if (activeOrderList.orderInfo!.numberOfService != null) {
-        widgetList.add(
-          addRowWidget('Sıra Numarası: ', activeOrderList.orderInfo!.numberOfService.toString()),
-        );
-      }
-    } else if (activeOrderList.orderInfo?.orderPointId == OrderPoint.TABLE.name) {
-      /// Sipariş Adı ------------------------------------------------------------------
-      widgetList.add(
-        addRowWidget('Masa: ', activeOrderList.orderInfo?.tableName ?? '-'),
-      );
-    }
-
-    if (activeOrderList.orderDate != null) {
-      widgetList.add(
-        addRowWidget('Tarih: ', activeOrderList.orderDate!.formatDateTimeForTurkishDate()),
-      );
-    }
-
-    /// sipariş numarasının son 4 hanesi random sayıdır
-    final String id = '${activeOrderList.orderId!}${(Random().nextInt(10000) + 1000)}';
-    widgetList.add(
-      addRowWidget('Sipariş No: ', id),
-    );
-    addSeparatorWidget(widgetList);
-
-    /// customer name ------------------------------------------------------------------
-    String customerName = '${activeOrderList.firstName ?? ''} ${activeOrderList.lastName ?? ''}';
-    if (customerName.trim().isNotEmpty) {
-      widgetList.add(
-        addRowWidget('Müşteri: ', customerName.maskNullableSurname()),
-      );
       addSeparatorWidget(widgetList);
     }
-
-    /// prdocut detail ------------------------------------------------------------------
-    widgetList.add(createColumnFromOrderDetailWidget(
-      activeOrderList.products!.map((e) => e.toPrinterQueueResponseOrderOrderItemModel()).toList(),
-    ));
 
     final image = await createImageFromWidget(
       Column(

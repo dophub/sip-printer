@@ -5,11 +5,18 @@ import '../sip_printer.dart';
 
 extension CustomerAddressModelExtension on CustomerAddressModel {
   String get getFullAddress {
-    try {
-      return '${neighborhoodName!} ${districtName!} ${cityName!} Bina:${buildingNumber!} Kat:${floor!} Daire:${flatNumber!} Açık Adres: ${address!} Adres Tarifi: ${addressRoute!}';
-    } catch (e) {
-      return address ?? '';
-    }
+    final parts = <String?>[
+      if ((neighborhoodName ?? '').isNotEmpty) neighborhoodName,
+      if ((districtName ?? '').isNotEmpty) districtName,
+      if ((cityName ?? '').isNotEmpty) cityName,
+      if ((buildingNumber ?? '').isNotEmpty) 'Bina: $buildingNumber',
+      if ((floor ?? '').isNotEmpty) 'Kat: $floor',
+      if ((flatNumber ?? '').isNotEmpty) 'Daire: $flatNumber',
+      if ((address ?? '').isNotEmpty) 'Açık Adres: $address',
+      if ((addressRoute ?? '').isNotEmpty) 'Adres Tarifi: $addressRoute',
+    ];
+
+    return parts.where((e) => e != null).join(' ');
   }
 }
 

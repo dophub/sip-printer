@@ -47,7 +47,6 @@ abstract class DesignFunctions {
     bool printPayment = false,
   }) {
     if (printData.paymentModelId == PaymentModelID.PRE.name) {
-
       /// Sıra numarası ------------------------------------------------------------------
       if (printData.numberOfService != null) {
         addReceiptTitle(byte, "Sıra Numarası");
@@ -110,6 +109,52 @@ abstract class DesignFunctions {
             ),
           ),
         ]),
+      );
+    }
+  }
+
+  void addHeaderWidget(
+    List<Widget> widgetList,
+    PrinterQueueResponsePrintDataModel printData, {
+    bool printTableNo = true,
+    bool printPayment = false,
+  }) {
+    if (printData.paymentModelId == PaymentModelID.PRE.name) {
+      /// Sıra numarası ------------------------------------------------------------------
+      if (printData.numberOfService != null) {
+        addReceiptTitleWidget(widgetList, "Sıra Numarası");
+        addReceiptTitleWidget(widgetList, printData.numberOfService.toString());
+        addEmptyLinesWidget(widgetList);
+      }
+
+      /// Pleksi numarası ------------------------------------------------------------------
+      if (printData.pleksiNumber != null) {
+        addReceiptTitleWidget(widgetList, "Pleksi Numarası");
+        addReceiptTitleWidget(widgetList, printData.pleksiNumber.toString());
+        addEmptyLinesWidget(widgetList);
+      }
+
+      /// service type ------------------------------------------------------------------
+      final String? txt = printData.serviceDeliveryType?.enumFromString(TableServiceType.values)?.title;
+      if (txt != null) {
+        widgetList.add(
+          addRowWidget('Servis Tipi: ', txt),
+        );
+      }
+    }
+
+    /// table no ------------------------------------------------------------------
+
+    if (printTableNo) {
+      widgetList.add(
+        addRowWidget('Masa: ', printData.tableInfo?.tableName ?? '-'),
+      );
+    }
+
+    /// payment type ------------------------------------------------------------------
+    if (printPayment) {
+      widgetList.add(
+        addRowWidget('Ödeme Yöntemi: ', printData.paymentType ?? '-'),
       );
     }
   }
@@ -285,6 +330,86 @@ abstract class DesignFunctions {
           ),
         );
       }
+    }
+  }
+
+  void addOrderHeaderWidget(
+    List<Widget> widgetList,
+    PrinterQuequeResponseOrderModel order, {
+    bool printPayment = true,
+    bool printCustomerPhoneNo = false,
+    bool printCustomerAddress = false,
+  }) {
+    /// payment type ------------------------------------------------------------------
+    if (printPayment) {
+      widgetList.add(
+        addRowWidget('Ödeme Yöntemi: ', "${order.paymentInfo?.name}"),
+      );
+
+      final String isPayedStr = order.paymentInfo?.isOnlinePayment == null
+          ? 'null'
+          : order.paymentInfo!.isOnlinePayment == true
+              ? 'Yapıldı'
+              : 'Yapılmadı';
+      widgetList.add(
+        addRowWidget('Ödeme Durumu: ', isPayedStr),
+      );
+    }
+
+    /// order no ------------------------------------------------------------------
+    /// sipariş numarasının son 4 hanesi random sayıdır
+    final String id = '${order.id!}${(Random().nextInt(10000) + 1000)}';
+    widgetList.add(
+      addRowWidget('Sipariş No: ', id),
+    );
+
+    /// order code ------------------------------------------------------------------
+    final String code = order.orderNumber ?? '';
+    if (code.trim().isNotEmpty) {
+      widgetList.add(
+        addRowWidget('Sipariş kodu: ', code),
+      );
+    }
+
+    /// create date ------------------------------------------------------------------
+    final date = DateFormat('dd.MM.yyyy HH:mm').format(order.recordDate ?? DateTime.now()).withoutDiacriticalMarks();
+    widgetList.add(
+      addRowWidget('Tarih: ', date),
+    );
+    addSeparatorWidget(widgetList);
+
+    /// customer name ------------------------------------------------------------------
+    final String customerName;
+    if (order.orderPointId == OrderPoint.TABLE.name) {
+      customerName = order.nickName.maskNullableSurname().withoutDiacriticalMarks();
+    } else {
+      customerName = order.customer!.nameSurname!.withoutDiacriticalMarks();
+    }
+    widgetList.add(
+      addRowWidget('Müşteri: ', customerName),
+    );
+
+    /// Customer Phone no ------------------------------------------------------------------
+    if (printCustomerPhoneNo) {
+      widgetList.add(
+        addRowWidget('Telefon No: ', '${order.customer?.phoneNumber}'),
+      );
+    }
+
+    /// Customer Address ------------------------------------------------------------------
+    if (printCustomerAddress) {
+      addEmptyLinesWidget(widgetList);
+      widgetList.add(
+        addRowWidget('Telefon No: ', order.customerAddress?.getFullAddress ?? '-'),
+      );
+    }
+
+    /// Customer Note ------------------------------------------------------------------
+    if (order.orderNote?.isNotEmpty == true) {
+      addEmptyLinesWidget(widgetList);
+      widgetList.add(
+        addRowWidget('Sipariş Notu: ', order.orderNote ?? '-'),
+      );
     }
   }
 
