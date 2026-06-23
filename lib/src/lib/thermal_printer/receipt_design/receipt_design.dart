@@ -288,56 +288,6 @@ class ReceiptDesign extends DesignFunctions {
     }
   }
 
-  /// print Report
-  List<int> printKitchenOrder(KitchenOrderModel activeOrderList) {
-    try {
-      List<int> byte = [];
-
-      /// slip title ------------------------------------------------------------------
-      addReceiptTitle(byte, "MUTFAK FİŞİ");
-      addEmptyLines(byte);
-
-      /// Sipariş Türü ------------------------------------------------------------------
-      String orderPoint = activeOrderList.orderInfo?.orderPointId?.enumFromString(OrderPoint.values)?.title ??
-          activeOrderList.orderInfo?.orderPointId ??
-          '-';
-
-      if (activeOrderList.orderInfo?.paymentModelId == PaymentModelID.PRE.name) {
-        orderPoint = '$orderPoint (Self Servis)';
-      }
-
-      addTowColumn(byte, 'Sipariş Türü: ', orderPoint);
-
-      /// Table name ------------------------------------------------------------------
-      if (activeOrderList.orderInfo?.orderPointId == OrderPoint.TABLE.name) {
-        addTowColumn(byte, 'Masa: ', activeOrderList.orderInfo?.tableName ?? '-');
-      }
-
-      /// sipariş numarasının son 4 hanesi random sayıdır
-      final String id = '${activeOrderList.orderId!}${(Random().nextInt(10000) + 1000)}';
-      addTowColumn(byte, 'Sipariş No: ', id);
-      addSeparator(byte);
-
-      /// customer name ------------------------------------------------------------------
-      String customerName = '${activeOrderList.firstName ?? ''} ${activeOrderList.lastName ?? ''}';
-      if (customerName.trim().isNotEmpty) {
-        addTowColumn(byte, 'Müşteri: ', customerName);
-        addSeparator(byte);
-      }
-
-      /// prdocut detail ------------------------------------------------------------------
-      createColumnFromOrderDetail(
-        byte,
-        activeOrderList.products!.map((e) => e.toPrinterQueueResponseOrderOrderItemModel()).toList(),
-      );
-
-      cut(byte);
-      return byte;
-    } catch (e) {
-      rethrow;
-    }
-  }
-
   Future<List<int>> printKitchenOrderByWidget(PrinterQueueResponseModel printData) async {
     final List<Widget> widgetList = [];
 

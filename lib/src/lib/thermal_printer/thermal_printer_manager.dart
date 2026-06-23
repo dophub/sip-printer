@@ -94,16 +94,6 @@ class ThermalPrinterManager {
   }
 
   /// print kitchen order
-  List<int> createReceiptForKitchenOrder(PrinterPaperTypeEnum paperSize, KitchenOrderModel activeOrderList) {
-    try {
-      final type = _printerPaperTypeToPaperSize(paperSize);
-      return ReceiptDesign(Generator(type, _profile), type).printKitchenOrder(activeOrderList);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// print kitchen order
   Future<List<int>> createReceiptForKitchenOrderByWidget(
     PrinterPaperTypeEnum paperSize,
     PrinterQueueResponseModel printModel,
