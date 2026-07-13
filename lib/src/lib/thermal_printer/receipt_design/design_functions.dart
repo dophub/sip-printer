@@ -252,6 +252,24 @@ abstract class DesignFunctions {
         ),
       ]),
     );
+
+    /// işlem no ------------------------------------------------------------------
+    if ((order.prefixedOrderNumber ?? '').isNotEmpty) {
+      byte.addAll(
+        generator.row([
+          PosColumn(
+            width: 12,
+            text: _createTowColumn('İşlem No: ', order.prefixedOrderNumber!),
+            styles: const PosStyles(
+              align: PosAlign.left,
+              width: PosTextSize.size1,
+              bold: true,
+            ),
+          ),
+        ]),
+      );
+    }
+
     addSeparator(byte);
 
     /// customer name ------------------------------------------------------------------
@@ -376,6 +394,14 @@ abstract class DesignFunctions {
     widgetList.add(
       addRowWidget('Tarih: ', date),
     );
+
+    /// işlem no ------------------------------------------------------------------
+    if ((order.prefixedOrderNumber ?? '').isNotEmpty) {
+      widgetList.add(
+        addRowWidget('İşlem No: ', order.prefixedOrderNumber!),
+      );
+    }
+
     addSeparatorWidget(widgetList);
 
     /// customer name ------------------------------------------------------------------
