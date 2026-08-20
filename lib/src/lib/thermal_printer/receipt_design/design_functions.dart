@@ -426,7 +426,27 @@ abstract class DesignFunctions {
     if (printCustomerAddress) {
       addEmptyLinesWidget(widgetList);
       widgetList.add(
-        addRowWidget('Adres: ', order.customerAddress?.getFullAddress ?? '-'),
+        Text(
+          'Adres:',
+          style: TextStyle(
+            fontSize: 32,
+            fontFamily: fontFamily,
+            height: 1,
+          ),
+          textAlign: TextAlign.left,
+        ),
+      );
+
+      widgetList.add(
+        Text(
+          order.customerAddress?.getFullAddress ?? '-',
+          style: TextStyle(
+            fontSize: 32,
+            fontFamily: fontFamily,
+            height: 1,
+          ),
+          textAlign: TextAlign.left,
+        ),
       );
     }
 
@@ -595,7 +615,7 @@ abstract class DesignFunctions {
                 flex: 5,
                 child: Text(
                   col2,
-                  textAlign: TextAlign.left,
+                  textAlign: TextAlign.right,
                   style: const TextStyle(
                     fontSize: 36,
                     fontFamily: fontFamily,
@@ -865,7 +885,6 @@ abstract class DesignFunctions {
       widgetList,
       (dealerInfo?.dealerName ?? SipPrinter.instance.headerTitle).toString(),
       fontSize: 36,
-      fontWeight: FontWeight.bold,
     );
 
     /// dealer address ------------------------------------------------------------------
@@ -873,7 +892,6 @@ abstract class DesignFunctions {
       widgetList,
       (dealerInfo?.address ?? SipPrinter.instance.footerTitle).toString(),
       fontSize: 36,
-      fontWeight: FontWeight.bold,
     );
   }
 
@@ -881,8 +899,8 @@ abstract class DesignFunctions {
     byte.addAll(generator.emptyLines(1));
   }
 
-  void addEmptyLinesWidget(List<Widget> list) {
-    list.add(const Text(''));
+  void addEmptyLinesWidget(List<Widget> list, {int count = 1}) {
+    list.add(Text('' * count));
   }
 
   void addCenterText(
@@ -1180,11 +1198,11 @@ abstract class DesignFunctions {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            flex: 4,
+            flex: 5,
             child: Text(
               col1,
               style: TextStyle(
-                fontSize: 36,
+                fontSize: 32,
                 fontFamily: fontFamily,
                 fontWeight: FontWeight.w500,
                 height: 1,
@@ -1196,7 +1214,7 @@ abstract class DesignFunctions {
             child: Text(
               col2,
               style: TextStyle(
-                fontSize: 36,
+                fontSize: 32,
                 fontFamily: fontFamily,
                 fontWeight: FontWeight.w500,
                 height: 1,
