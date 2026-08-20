@@ -70,7 +70,7 @@ class ReceiptDesign extends DesignFunctions {
 
       /// total amount ------------------------------------------------------------------
       addPaymentDetailWidget(widgetList, printData.printData!);
-      addEmptyLinesWidget(widgetList);
+      addEmptyLinesWidget(widgetList, count: 3);
 
       /// dealer name ------------------------------------------------------------------
       addFooterWidget(widgetList, printData.printData!.dealerInfo);
@@ -140,7 +140,7 @@ class ReceiptDesign extends DesignFunctions {
 
       /// total amount ------------------------------------------------------------------
       addPaymentDetailWidget(widgetList, printData.printData!);
-      addEmptyLinesWidget(widgetList);
+      addEmptyLinesWidget(widgetList, count: 3);
 
       /// footer ------------------------------------------------------------------
       addFooterWidget(widgetList, printData.printData!.dealerInfo);
@@ -299,7 +299,7 @@ class ReceiptDesign extends DesignFunctions {
         addCenterTextWidget(widgetList, element.text ?? '', fontSize: size);
       }
 
-      if (printData.footers!.isNotEmpty) addEmptyLinesWidget(widgetList);
+      addEmptyLinesWidget(widgetList, count: 3);
 
       /// Footer ------------------------------------------------------------------
       addFooterWidget(widgetList, printData.printData!.dealerInfo);
@@ -389,7 +389,7 @@ class ReceiptDesign extends DesignFunctions {
 
       /// payment detail ------------------------------------------------------------------
       addPaymentDetailWidget(widgetList, printData.printData!);
-      addEmptyLinesWidget(widgetList);
+      addEmptyLinesWidget(widgetList, count: 3);
 
       /// footer ------------------------------------------------------------------
       addFooterWidget(widgetList, printData.printData!.dealerInfo);
@@ -467,7 +467,7 @@ class ReceiptDesign extends DesignFunctions {
 
       /// payment detail ------------------------------------------------------------------
       addPaymentDetailWidget(widgetList, printData.printData!);
-      addEmptyLinesWidget(widgetList);
+      addEmptyLinesWidget(widgetList, count: 3);
 
       /// footer ------------------------------------------------------------------
       addFooterWidget(widgetList, printData.printData!.dealerInfo);
@@ -618,7 +618,7 @@ class ReceiptDesign extends DesignFunctions {
         );
       }
 
-      addEmptyLinesWidget(widgetList);
+      addEmptyLinesWidget(widgetList, count: 3);
 
       /// Footer ------------------------------------------------------------------
       addFooterWidget(widgetList, null);
