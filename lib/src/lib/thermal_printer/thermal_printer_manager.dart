@@ -28,17 +28,17 @@ class ThermalPrinterManager {
   Future<List<int>> createReceiptForTable(PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
-      return ReceiptDesign(Generator(type, _profile), type).createReceiptForTable(printModel);
+      return ReceiptDesign(Generator(type, _profile), type).createReceiptForTableWidget(printModel);
     } catch (e) {
       rethrow;
     }
   }
 
   /// Gel Al
-  List<int> createReceiptForGetIn(PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
+  Future<List<int>> createReceiptForGetIn(PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
-      return ReceiptDesign(Generator(type, _profile), type).createReceiptForGetIn(printModel);
+      return ReceiptDesign(Generator(type, _profile), type).createReceiptForGetInWidget(printModel);
     } catch (e) {
       rethrow;
     }
@@ -51,43 +51,37 @@ class ThermalPrinterManager {
   ) async {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
-      return ReceiptDesign(Generator(type, _profile), type).createReceiptForTakeAway(printModel);
+      return ReceiptDesign(Generator(type, _profile), type).createReceiptForTakeoutWidget(printModel);
     } catch (e) {
       rethrow;
     }
   }
 
   /// Kasa Fişi
-  List<int> createReceiptForCashRegister(
-    PrinterPaperTypeEnum paperSize,
-    PrinterQueueResponseModel printModel,
-  ) {
+  Future<List<int>> createReceiptForCashRegister(PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
-      return ReceiptDesign(Generator(type, _profile), type).createReceiptForCashRegister(printModel);
+      return ReceiptDesign(Generator(type, _profile), type).createReceiptForCashRegisterWidget(printModel);
     } catch (e) {
       rethrow;
     }
   }
 
   /// Masa Adisyonu
-  List<int> createReceiptForTableBill(
-    PrinterPaperTypeEnum paperSize,
-    PrinterQueueResponseModel printModel,
-  ) {
+  Future<List<int>> createReceiptForTableBill(PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
-      return ReceiptDesign(Generator(type, _profile), type).createReceiptForTableBill(printModel);
+      return ReceiptDesign(Generator(type, _profile), type).createReceiptForTableBillWidget(printModel);
     } catch (e) {
       rethrow;
     }
   }
 
   /// print report
-  List<int> createReceiptForReport(PrinterPaperTypeEnum paperSize, DailyReportModel printModel) {
+  Future<List<int>> createReceiptForReport(PrinterPaperTypeEnum paperSize, DailyReportModel printModel) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
-      return ReceiptDesign(Generator(type, _profile), type).createReceiptForReport(printModel);
+      return ReceiptDesign(Generator(type, _profile), type).createReceiptForReportWidget(printModel);
     } catch (e) {
       rethrow;
     }
@@ -109,7 +103,7 @@ class ThermalPrinterManager {
   Future<List<int>> createReceiptForTest(PrinterPaperTypeEnum paperSize) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
-      return ReceiptDesign(Generator(type, _profile), type).testTicket();
+      return ReceiptDesign(Generator(type, _profile), type).testTicketWidget();
     } catch (e) {
       debugPrint(e.toString());
       rethrow;
