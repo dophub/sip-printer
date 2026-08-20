@@ -70,7 +70,7 @@ class ReceiptDesign extends DesignFunctions {
 
       /// total amount ------------------------------------------------------------------
       addPaymentDetailWidget(widgetList, printData.printData!);
-      addEmptyLinesWidget(widgetList, count: 3);
+      addEmptyLinesWidget(widgetList, count: 2);
 
       /// dealer name ------------------------------------------------------------------
       addFooterWidget(widgetList, printData.printData!.dealerInfo);
@@ -140,7 +140,7 @@ class ReceiptDesign extends DesignFunctions {
 
       /// total amount ------------------------------------------------------------------
       addPaymentDetailWidget(widgetList, printData.printData!);
-      addEmptyLinesWidget(widgetList, count: 3);
+      addEmptyLinesWidget(widgetList, count: 2);
 
       /// footer ------------------------------------------------------------------
       addFooterWidget(widgetList, printData.printData!.dealerInfo);
@@ -166,11 +166,11 @@ class ReceiptDesign extends DesignFunctions {
       /// Title ------------------------------------------------------------------
       final String title;
       if (printData.isRevision == true) {
-        title = "Revize Fiş";
+        title = "REVİZE FİŞ";
       } else if (printData.paymentModelId == PaymentModelID.PRE.name) {
-        title = "Self Servis Fişi";
+        title = "SELF SERVİS FİŞİ";
       } else {
-        title = 'Sipariş Fişi';
+        title = "SİPARİŞ FİŞİ";
       }
       addReceiptTitle(byte, title);
       addEmptyLines(byte);
@@ -241,11 +241,11 @@ class ReceiptDesign extends DesignFunctions {
       /// Title ------------------------------------------------------------------
       final String title;
       if (printData.isRevision == true) {
-        title = "Revize Fiş";
+        title = "REVİZE FİŞ";
       } else if (printData.paymentModelId == PaymentModelID.PRE.name) {
-        title = "Self Servis Fişi";
+        title = "SELF SERVİS FİŞİ";
       } else {
-        title = 'Sipariş Fişi';
+        title = "SİPARİŞ FİŞİ";
       }
       addReceiptTitleWidget(widgetList, title);
       addEmptyLinesWidget(widgetList);
@@ -254,7 +254,7 @@ class ReceiptDesign extends DesignFunctions {
       if (printData.headers!.isNotEmpty) {
         for (var element in printData.headers!) {
           final size = getSizeWidget(element.style);
-          addCenterTextWidget(widgetList, element.text ?? '', fontSize: size);
+          addTextWidget(widgetList, element.text ?? '', fontSize: size);
         }
         addEmptyLinesWidget(widgetList);
       }
@@ -296,10 +296,10 @@ class ReceiptDesign extends DesignFunctions {
       /// API Footer ------------------------------------------------------------------
       for (var element in printData.footers!) {
         final size = getSizeWidget(element.style);
-        addCenterTextWidget(widgetList, element.text ?? '', fontSize: size);
+        addTextWidget(widgetList, element.text ?? '', fontSize: size);
       }
 
-      addEmptyLinesWidget(widgetList, count: 3);
+      addEmptyLinesWidget(widgetList, count: 2);
 
       /// Footer ------------------------------------------------------------------
       addFooterWidget(widgetList, printData.printData!.dealerInfo);
@@ -389,7 +389,7 @@ class ReceiptDesign extends DesignFunctions {
 
       /// payment detail ------------------------------------------------------------------
       addPaymentDetailWidget(widgetList, printData.printData!);
-      addEmptyLinesWidget(widgetList, count: 3);
+      addEmptyLinesWidget(widgetList, count: 2);
 
       /// footer ------------------------------------------------------------------
       addFooterWidget(widgetList, printData.printData!.dealerInfo);
@@ -467,7 +467,7 @@ class ReceiptDesign extends DesignFunctions {
 
       /// payment detail ------------------------------------------------------------------
       addPaymentDetailWidget(widgetList, printData.printData!);
-      addEmptyLinesWidget(widgetList, count: 3);
+      addEmptyLinesWidget(widgetList, count: 2);
 
       /// footer ------------------------------------------------------------------
       addFooterWidget(widgetList, printData.printData!.dealerInfo);
@@ -618,7 +618,7 @@ class ReceiptDesign extends DesignFunctions {
         );
       }
 
-      addEmptyLinesWidget(widgetList, count: 3);
+      addEmptyLinesWidget(widgetList, count: 2);
 
       /// Footer ------------------------------------------------------------------
       addFooterWidget(widgetList, null);
@@ -647,7 +647,9 @@ class ReceiptDesign extends DesignFunctions {
     addHeaderWidget(widgetList, printData.printData!);
 
     /// Orders ------------------------------------------------------------------
-    for (var order in printData.printData!.orders!) {
+    for (int i = 0; i < printData.printData!.orders!.length; i++) {
+      final order = printData.printData!.orders![i];
+
       /// order header ------------------------------------------------------------------
       addOrderHeaderWidget(widgetList, order, printPayment: false);
       addSeparatorWidget(widgetList);
@@ -655,7 +657,7 @@ class ReceiptDesign extends DesignFunctions {
       /// order item ------------------------------------------------------------------
       widgetList.add(createColumnFromOrderDetailWidget(order.items!, isPriceVisible: false));
 
-      addSeparatorWidget(widgetList);
+      if (i < printData.printData!.orders!.length - 1) addSeparatorWidget(widgetList);
     }
 
     final image = await createImageFromWidget(

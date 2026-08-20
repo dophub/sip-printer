@@ -37,7 +37,7 @@ abstract class DesignFunctions {
   }
 
   void addReceiptTitleWidget(List<Widget> list, String title) {
-    addCenterTextWidget(list, title, fontWeight: FontWeight.bold, fontSize: 50);
+    addTextWidget(list, title, fontWeight: FontWeight.bold, fontSize: 50);
   }
 
   void addHeader(
@@ -101,7 +101,7 @@ abstract class DesignFunctions {
         generator.row([
           PosColumn(
             width: 12,
-            text: _createTowColumn('Ödeme Yöntemi: ', "${printData.paymentType}".withoutDiacriticalMarks()),
+            text: _createTowColumn('Ödeme Tipi: ', "${printData.paymentType}".withoutDiacriticalMarks()),
             styles: const PosStyles(
               align: PosAlign.left,
               width: PosTextSize.size1,
@@ -154,7 +154,7 @@ abstract class DesignFunctions {
     /// payment type ------------------------------------------------------------------
     if (printPayment) {
       widgetList.add(
-        addRowWidget('Ödeme Yöntemi: ', printData.paymentType ?? '-'),
+        addRowWidget('Ödeme Tipi: ', printData.paymentType ?? '-'),
       );
     }
   }
@@ -172,7 +172,7 @@ abstract class DesignFunctions {
         generator.row([
           PosColumn(
             width: 12,
-            text: _createTowColumn('Ödeme Yöntemi: ', "${order.paymentInfo?.name}".withoutDiacriticalMarks()),
+            text: _createTowColumn('Ödeme Tipi: ', "${order.paymentInfo?.name}".withoutDiacriticalMarks()),
             styles: const PosStyles(
               align: PosAlign.left,
               width: PosTextSize.size1,
@@ -361,7 +361,7 @@ abstract class DesignFunctions {
     /// payment type ------------------------------------------------------------------
     if (printPayment) {
       widgetList.add(
-        addRowWidget('Ödeme Yöntemi: ', "${order.paymentInfo?.name}"),
+        addRowWidget('Ödeme Tipi: ', "${order.paymentInfo?.name}"),
       );
 
       final String isPayedStr = order.paymentInfo?.isOnlinePayment == null
@@ -370,7 +370,7 @@ abstract class DesignFunctions {
               ? 'Yapıldı'
               : 'Yapılmadı';
       widgetList.add(
-        addRowWidget('Ödeme Durumu: ', isPayedStr),
+        addRowWidget('Ödeme Durumu: ', isPayedStr, flex1: 1, flex2: 1),
       );
     }
 
@@ -381,13 +381,13 @@ abstract class DesignFunctions {
       addRowWidget('Sipariş No: ', id),
     );
 
-    /// order code ------------------------------------------------------------------
+/*    /// order code ------------------------------------------------------------------
     final String code = order.orderNumber ?? '';
     if (code.trim().isNotEmpty) {
       widgetList.add(
         addRowWidget('Sipariş kodu: ', code),
       );
-    }
+    }*/
 
     /// create date ------------------------------------------------------------------
     final date = DateFormat('dd.MM.yyyy HH:mm').format(order.recordDate ?? DateTime.now());
@@ -402,61 +402,46 @@ abstract class DesignFunctions {
       );
     }
 
-    addSeparatorWidget(widgetList);
+    List<Widget> customerInfoList = [];
+    addSeparatorWidget(customerInfoList);
 
     /// customer name ------------------------------------------------------------------
-    final String customerName;
-    if (order.orderPointId == OrderPoint.TABLE.name) {
-      customerName = order.nickName.maskNullableSurname();
-    } else {
-      customerName = order.customer!.nameSurname!;
+    if ((order.customer?.nameSurname?.trim() ?? '').isNotEmpty) {
+      customerInfoList.add(
+        addRowWidget('Müşteri: ', order.customer!.nameSurname!),
+      );
     }
-    widgetList.add(
-      addRowWidget('Müşteri: ', customerName),
-    );
 
     /// Customer Phone no ------------------------------------------------------------------
     if (printCustomerPhoneNo) {
-      widgetList.add(
+      customerInfoList.add(
         addRowWidget('Telefon No: ', '${order.customer?.phoneNumber}'),
       );
     }
 
     /// Customer Address ------------------------------------------------------------------
     if (printCustomerAddress) {
-      addEmptyLinesWidget(widgetList);
-      widgetList.add(
-        Text(
-          'Adres:',
-          style: TextStyle(
-            fontSize: 32,
-            fontFamily: fontFamily,
-            height: 1,
-          ),
-          textAlign: TextAlign.left,
-        ),
-      );
-
-      widgetList.add(
-        Text(
-          order.customerAddress?.getFullAddress ?? '-',
-          style: TextStyle(
-            fontSize: 32,
-            fontFamily: fontFamily,
-            height: 1,
-          ),
-          textAlign: TextAlign.left,
-        ),
+      addEmptyLinesWidget(customerInfoList);
+      addTextWidget(
+        customerInfoList,
+        'Adres: ${order.customerAddress?.getFullAddress ?? '-'}',
+        textAlign: TextAlign.start,
+        fontWeight: FontWeight.w600,
       );
     }
 
     /// Customer Note ------------------------------------------------------------------
     if (order.orderNote?.isNotEmpty == true) {
-      addEmptyLinesWidget(widgetList);
-      widgetList.add(
-        addRowWidget('Sipariş Notu: ', order.orderNote ?? '-'),
+      addEmptyLinesWidget(customerInfoList);
+      addTextWidget(
+        customerInfoList,
+        'Sipariş Notu: ${order.orderNote}',
+        textAlign: TextAlign.start,
+        fontWeight: FontWeight.w600,
       );
     }
+
+    if (customerInfoList.length > 1) widgetList.addAll(customerInfoList);
   }
 
   void createColumnFromOrderDetail(List<int> byte, List<PrinterQueueResponseOrderOrderItemModel> items) {
@@ -512,7 +497,7 @@ abstract class DesignFunctions {
             }
             final String totalPrice;
             if (items[i].totalPrice != null) {
-              totalPrice = "${items[i].totalPrice!.toStringAsFixed(2)} TL".withoutDiacriticalMarks();
+              totalPrice = "${items[i].totalPrice!.toStringAsFixed(2)}TL".withoutDiacriticalMarks();
             } else {
               totalPrice = '';
             }
@@ -599,14 +584,14 @@ abstract class DesignFunctions {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              flex: 7,
+              flex: 8,
               child: Text(
                 col1,
                 style: TextStyle(
-                  fontSize: 36,
+                  fontSize: 34,
                   fontFamily: fontFamily,
                   fontWeight: fontWeight,
-                  height: 1,
+                  height: 1.2,
                 ),
               ),
             ),
@@ -617,10 +602,10 @@ abstract class DesignFunctions {
                   col2,
                   textAlign: TextAlign.right,
                   style: const TextStyle(
-                    fontSize: 36,
+                    fontSize: 34,
                     fontFamily: fontFamily,
                     fontWeight: FontWeight.w500,
-                    height: 1,
+                    height: 1.2,
                   ),
                 ),
               ),
@@ -633,7 +618,7 @@ abstract class DesignFunctions {
       if (items?.isNotEmpty != true) return [];
       List<Widget> optionWidgets = [];
       optionWidgets.add(
-        _row('$title: ', null, fontWeight: FontWeight.w600, leftPadding: leftPadding),
+        _row('$title: ', null, fontWeight: FontWeight.w500, leftPadding: leftPadding),
       );
       String tempString = "";
       for (var item in items!) {
@@ -647,35 +632,30 @@ abstract class DesignFunctions {
       return optionWidgets;
     }
 
-    for (var item in items) {
+    for (int i = 0; i < items.length; i++) {
+      var item = items[i];
+
       final countStr = '${item.count}x';
       // String emptyStr = ' ' * countStr.length;
 
       /// ITEM TITLE
       if (item.status!.statusCode == OrderItemStatusId.CANCEL.name) {
-        children.add(
-          const Center(
-            child: Text(
-              'İptal Edildi',
-              style: TextStyle(
-                fontSize: 36,
-                fontFamily: fontFamily,
-                fontWeight: FontWeight.bold,
-                height: 1,
-              ),
-            ),
-          ),
+        addTextWidget(
+          children,
+          'İptal Edildi',
+          fontSize: 34,
+          fontWeight: FontWeight.w700,
         );
       }
 
       /// item Title - Price -----------------------------------------------
       String? totalPrice;
       if (isPriceVisible == true) {
-        totalPrice = item.totalPrice != null ? "${item.totalPrice!.toStringAsFixed(2)} TL" : null;
+        totalPrice = item.totalPrice != null ? "${item.totalPrice!.toStringAsFixed(2)}TL" : null;
       }
 
       children.add(
-        _row('$countStr${item.itemTitle!}', totalPrice, fontWeight: FontWeight.bold),
+        _row('$countStr${item.itemTitle!}', totalPrice, fontWeight: FontWeight.w700),
       );
       children.add(const SizedBox(height: 10));
 
@@ -701,7 +681,7 @@ abstract class DesignFunctions {
             children.add(_row(
               '-${option.sectionTitle!}:',
               null,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w500,
               leftPadding: countStr.length * 8,
             ));
 
@@ -729,12 +709,12 @@ abstract class DesignFunctions {
         children.add(_row(
           'Ürün Notu: ${item.itemNote!}',
           null,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w700,
           leftPadding: countStr.length * 8,
         ));
       }
 
-      children.add(const SizedBox(height: 24));
+      if (i != items.length - 1) children.add(const SizedBox(height: 18));
     }
 
     return Column(
@@ -746,7 +726,7 @@ abstract class DesignFunctions {
   void addPaymentDetail(List<int> byte, PrinterQueueResponsePrintDataModel printData) {
     /// tip amount ------------------------------------------------------------------
     if (printData.totalTipAmount != null && printData.totalTipAmount != 0) {
-      final totalTipAmount = '${printData.totalTipAmount?.toStringAsFixed(2)} TL';
+      final totalTipAmount = '${printData.totalTipAmount?.toStringAsFixed(2)}TL';
       byte.addAll(
         generator.row([
           PosColumn(
@@ -764,7 +744,7 @@ abstract class DesignFunctions {
 
     /// service to table amount ------------------------------------------------------------------
     if (printData.tableServiceAmount != null && printData.tableServiceAmount != 0) {
-      final tableServiceAmount = '${printData.tableServiceAmount?.toStringAsFixed(2)} TL';
+      final tableServiceAmount = '${printData.tableServiceAmount?.toStringAsFixed(2)}TL';
       byte.addAll(
         generator.row([
           PosColumn(
@@ -791,7 +771,7 @@ abstract class DesignFunctions {
       generator.row([
         PosColumn(
           width: 12,
-          text: _createTowColumn('TOPLAM TUTAR: ', '${totalAmount.toStringAsFixed(2)} TL'),
+          text: _createTowColumn('TOPLAM TUTAR: ', '${totalAmount.toStringAsFixed(2)}TL'),
           styles: const PosStyles(
             align: PosAlign.left,
             width: PosTextSize.size1,
@@ -808,7 +788,7 @@ abstract class DesignFunctions {
   ) {
     /// tip amount ------------------------------------------------------------------
     if (printData.totalTipAmount != null && printData.totalTipAmount != 0) {
-      final totalTipAmount = '${printData.totalTipAmount?.toStringAsFixed(2)} TL';
+      final totalTipAmount = '${printData.totalTipAmount?.toStringAsFixed(2)}TL';
 
       widgetList.add(
         addRowWidget('Bahşiş: ', totalTipAmount),
@@ -817,7 +797,7 @@ abstract class DesignFunctions {
 
     /// service to table amount ------------------------------------------------------------------
     if (printData.tableServiceAmount != null && printData.tableServiceAmount != 0) {
-      final tableServiceAmount = '${printData.tableServiceAmount?.toStringAsFixed(2)} TL';
+      final tableServiceAmount = '${printData.tableServiceAmount?.toStringAsFixed(2)}TL';
 
       widgetList.add(
         addRowWidget('Masaya Servis: ', tableServiceAmount),
@@ -835,7 +815,7 @@ abstract class DesignFunctions {
     widgetList.add(
       addRowWidget(
         'TOPLAM TUTAR: ',
-        '${totalAmount.toStringAsFixed(2)} TL',
+        '${totalAmount.toStringAsFixed(2)}TL',
       ),
     );
   }
@@ -881,17 +861,19 @@ abstract class DesignFunctions {
     PrinterQueueDealerInfoModel? dealerInfo,
   ) {
     /// dealer name ------------------------------------------------------------------
-    addCenterTextWidget(
+    addTextWidget(
       widgetList,
       (dealerInfo?.dealerName ?? SipPrinter.instance.headerTitle).toString(),
-      fontSize: 36,
+      fontSize: 34,
+      fontWeight: FontWeight.w600,
     );
 
     /// dealer address ------------------------------------------------------------------
-    addCenterTextWidget(
+    addTextWidget(
       widgetList,
       (dealerInfo?.address ?? SipPrinter.instance.footerTitle).toString(),
-      fontSize: 36,
+      fontSize: 34,
+      fontWeight: FontWeight.w600,
     );
   }
 
@@ -900,7 +882,7 @@ abstract class DesignFunctions {
   }
 
   void addEmptyLinesWidget(List<Widget> list, {int count = 1}) {
-    list.add(Text('' * count));
+    list.addAll(List.generate(count, (_) => const Text('')));
   }
 
   void addCenterText(
@@ -928,11 +910,12 @@ abstract class DesignFunctions {
     );
   }
 
-  void addCenterTextWidget(
+  void addTextWidget(
     List<Widget> list,
     String title, {
-    double? fontSize,
+    double? fontSize = 32,
     FontWeight? fontWeight,
+    TextAlign textAlign = TextAlign.center,
   }) {
     list.add(
       Text(
@@ -941,9 +924,9 @@ abstract class DesignFunctions {
           fontSize: fontSize,
           fontFamily: fontFamily,
           fontWeight: fontWeight,
-          height: 1,
+          height: 1.2,
         ),
-        textAlign: TextAlign.center,
+        textAlign: textAlign,
       ),
     );
   }
@@ -1085,14 +1068,14 @@ abstract class DesignFunctions {
         ),
       );
 
-      addCenterTextWidget(widgetList, 'E-Belgeye erişmek için', fontSize: 36, fontWeight: FontWeight.bold);
-      addCenterTextWidget(widgetList, 'yukarıdaki QR kodu okutunuz.', fontSize: 36, fontWeight: FontWeight.bold);
+      addTextWidget(widgetList, 'E-Belgeye erişmek için', fontSize: 34, fontWeight: FontWeight.w700);
+      addTextWidget(widgetList, 'yukarıdaki QR kodu okutunuz.', fontSize: 34, fontWeight: FontWeight.w700);
     } catch (e) {
-      addCenterTextWidget(
+      addTextWidget(
         widgetList,
         link,
-        fontSize: 36,
-        fontWeight: FontWeight.bold,
+        fontSize: 34,
+        fontWeight: FontWeight.w700,
       );
     }
   }
@@ -1194,30 +1177,30 @@ abstract class DesignFunctions {
     }
   }
 
-  addRowWidget(String col1, String col2) => Row(
+  addRowWidget(String col1, String col2, {int flex1 = 5, int flex2 = 6}) => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            flex: 5,
+            flex: flex1,
             child: Text(
               col1,
               style: TextStyle(
                 fontSize: 32,
                 fontFamily: fontFamily,
                 fontWeight: FontWeight.w500,
-                height: 1,
+                height: 1.2,
               ),
             ),
           ),
           Expanded(
-            flex: 6,
+            flex: flex2,
             child: Text(
               col2,
               style: TextStyle(
                 fontSize: 32,
                 fontFamily: fontFamily,
                 fontWeight: FontWeight.w500,
-                height: 1,
+                height: 1.2,
               ),
               textAlign: TextAlign.right,
             ),
@@ -1275,6 +1258,7 @@ abstract class DesignFunctions {
     List<int> byte = [];
     byte += generator.image(image);
     byte += generator.cut();
+    byte += generator.beep(n: 1, duration: PosBeepDuration.beep300ms);
 
     return byte;
   }
