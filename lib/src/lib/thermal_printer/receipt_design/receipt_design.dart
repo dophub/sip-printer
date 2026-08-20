@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:sip_models/enum.dart';
 import 'package:sip_models/ri_enum.dart';
@@ -12,7 +10,7 @@ import 'package:sip_models/ri_models.dart';
 class ReceiptDesign extends DesignFunctions {
   ReceiptDesign(super.generator, super._paperSize);
 
-  Future<List<int>> createReceiptForTakeAway(PrinterQueueResponseModel printData) async {
+  Future<List<int>> createReceiptForTakeout(PrinterQueueResponseModel printData) async {
     try {
       List<int> byte = [];
 
@@ -48,6 +46,48 @@ class ReceiptDesign extends DesignFunctions {
     }
   }
 
+  Future<List<int>> createReceiptForTakeoutWidget(PrinterQueueResponseModel printData) async {
+    try {
+      final List<Widget> widgetList = [];
+
+      final order = printData.printData!.orders!.first;
+
+      /// MarketPlace logo ------------------------------------------------------------------
+      await add3PartLogoWidget(widgetList, order.clientPointId);
+      addEmptyLinesWidget(widgetList);
+
+      /// title ------------------------------------------------------------------
+      addReceiptTitleWidget(widgetList, 'PAKET');
+      addEmptyLinesWidget(widgetList);
+
+      /// header ------------------------------------------------------------------
+      addOrderHeaderWidget(widgetList, order, printCustomerPhoneNo: true, printCustomerAddress: true);
+
+      /// Order Item ------------------------------------------------------------------
+      addSeparatorWidget(widgetList);
+      widgetList.add(createColumnFromOrderDetailWidget(order.items!));
+      addSeparatorWidget(widgetList);
+
+      /// total amount ------------------------------------------------------------------
+      addPaymentDetailWidget(widgetList, printData.printData!);
+      addEmptyLinesWidget(widgetList);
+
+      /// dealer name ------------------------------------------------------------------
+      addFooterWidget(widgetList, printData.printData!.dealerInfo);
+
+      final image = await createImageFromWidget(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: widgetList,
+        ),
+      );
+
+      return convertImageToByteAndCut(image);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   List<int> createReceiptForGetIn(PrinterQueueResponseModel printData) {
     try {
       List<int> byte = [];
@@ -75,6 +115,44 @@ class ReceiptDesign extends DesignFunctions {
 
       cut(byte);
       return byte;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<int>> createReceiptForGetInWidget(PrinterQueueResponseModel printData) async {
+    try {
+      final List<Widget> widgetList = [];
+
+      /// title ------------------------------------------------------------------
+      addReceiptTitleWidget(widgetList, 'GEL AL');
+      addEmptyLinesWidget(widgetList);
+
+      final order = printData.printData!.orders!.first;
+
+      /// header ------------------------------------------------------------------
+      addOrderHeaderWidget(widgetList, order);
+
+      /// Order Item ------------------------------------------------------------------
+      addSeparatorWidget(widgetList);
+      widgetList.add(createColumnFromOrderDetailWidget(order.items!));
+      addSeparatorWidget(widgetList);
+
+      /// total amount ------------------------------------------------------------------
+      addPaymentDetailWidget(widgetList, printData.printData!);
+      addEmptyLinesWidget(widgetList);
+
+      /// footer ------------------------------------------------------------------
+      addFooterWidget(widgetList, printData.printData!.dealerInfo);
+
+      final image = await createImageFromWidget(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: widgetList,
+        ),
+      );
+
+      return convertImageToByteAndCut(image);
     } catch (e) {
       rethrow;
     }
@@ -155,6 +233,90 @@ class ReceiptDesign extends DesignFunctions {
     }
   }
 
+  /// sipariş fişi
+  Future<List<int>> createReceiptForTableWidget(PrinterQueueResponseModel printData) async {
+    try {
+      final List<Widget> widgetList = [];
+
+      /// Title ------------------------------------------------------------------
+      final String title;
+      if (printData.isRevision == true) {
+        title = "Revize Fiş";
+      } else if (printData.paymentModelId == PaymentModelID.PRE.name) {
+        title = "Self Servis Fişi";
+      } else {
+        title = 'Sipariş Fişi';
+      }
+      addReceiptTitleWidget(widgetList, title);
+      addEmptyLinesWidget(widgetList);
+
+      /// Header ------------------------------------------------------------------
+      if (printData.headers!.isNotEmpty) {
+        for (var element in printData.headers!) {
+          final size = getSizeWidget(element.style);
+          addCenterTextWidget(widgetList, element.text ?? '', fontSize: size);
+        }
+        addEmptyLinesWidget(widgetList);
+      }
+
+      /// Order Header ------------------------------------------------------------------
+      addHeaderWidget(widgetList, printData.printData!);
+
+      /// Orders ------------------------------------------------------------------
+      for (var order in printData.printData!.orders!) {
+        /// Order Header ------------------------------------------------------------------
+        addOrderHeaderWidget(widgetList, order, printPayment: false);
+        addSeparatorWidget(widgetList);
+
+        /// Order Item ------------------------------------------------------------------
+        widgetList.add(createColumnFromOrderDetailWidget(order.items!));
+        addSeparatorWidget(widgetList);
+
+        /// Invoice QR Link
+        /// birden fazla order varsa her order için ayrı ayrı qr basar
+        if (printData.printData!.orders!.length > 1 && order.invoiceSuccessLink != null) {
+          await addInvoiceQRLinkWidget(widgetList, order.invoiceSuccessLink!);
+          addSeparatorWidget(widgetList);
+        }
+      }
+
+      /// Payment ------------------------------------------------------------------
+      addPaymentDetailWidget(widgetList, printData.printData!);
+      addEmptyLinesWidget(widgetList);
+
+      /// Invoice QR Link ------------------------------------------------------------------
+      /// birden fazla order varsa her order için ayrı ayrı qr basar
+      /// bitane order varsa fişin sonunda bitane qr basar
+      if (printData.printData!.orders!.length == 1 && printData.printData!.orders!.first.invoiceSuccessLink != null) {
+        addSeparatorWidget(widgetList);
+        await addInvoiceQRLinkWidget(widgetList, printData.printData!.orders!.first.invoiceSuccessLink!);
+        addSeparatorWidget(widgetList);
+      }
+
+      /// API Footer ------------------------------------------------------------------
+      for (var element in printData.footers!) {
+        final size = getSizeWidget(element.style);
+        addCenterTextWidget(widgetList, element.text ?? '', fontSize: size);
+      }
+
+      if (printData.footers!.isNotEmpty) addEmptyLinesWidget(widgetList);
+
+      /// Footer ------------------------------------------------------------------
+      addFooterWidget(widgetList, printData.printData!.dealerInfo);
+
+      final image = await createImageFromWidget(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: widgetList,
+        ),
+      );
+
+      return convertImageToByteAndCut(image);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// kasa fişi
   List<int> createReceiptForCashRegister(PrinterQueueResponseModel printData) {
     try {
@@ -196,6 +358,55 @@ class ReceiptDesign extends DesignFunctions {
     }
   }
 
+  /// kasa fişi
+  Future<List<int>> createReceiptForCashRegisterWidget(PrinterQueueResponseModel printData) async {
+    try {
+      final List<Widget> widgetList = [];
+
+      /// slip title ------------------------------------------------------------------
+      addReceiptTitleWidget(widgetList, "KASA FİŞİ");
+      addEmptyLinesWidget(widgetList);
+
+      /// header ------------------------------------------------------------------
+      addHeaderWidget(
+        widgetList,
+        printData.printData!,
+        printTableNo: printData.printData!.paymentModelId == PaymentModelID.POST.name ||
+            printData.printData!.serviceDeliveryType == TableServiceType.TABLE.name,
+        printPayment: true,
+      );
+
+      /// Orders ------------------------------------------------------------------
+      for (var order in printData.printData!.orders!) {
+        /// order header ------------------------------------------------------------------
+        addOrderHeaderWidget(widgetList, order, printPayment: false);
+        addSeparatorWidget(widgetList);
+
+        /// order detail ------------------------------------------------------------------
+        widgetList.add(createColumnFromOrderDetailWidget(order.items!));
+        addSeparatorWidget(widgetList);
+      }
+
+      /// payment detail ------------------------------------------------------------------
+      addPaymentDetailWidget(widgetList, printData.printData!);
+      addEmptyLinesWidget(widgetList);
+
+      /// footer ------------------------------------------------------------------
+      addFooterWidget(widgetList, printData.printData!.dealerInfo);
+
+      final image = await createImageFromWidget(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: widgetList,
+        ),
+      );
+
+      return convertImageToByteAndCut(image);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// masa adisyonu
   List<int> createReceiptForTableBill(PrinterQueueResponseModel printData) {
     try {
@@ -226,6 +437,49 @@ class ReceiptDesign extends DesignFunctions {
       addFooter(byte, printData.printData!.dealerInfo);
       cut(byte);
       return byte;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// masa adisyonu
+  Future<List<int>> createReceiptForTableBillWidget(PrinterQueueResponseModel printData) async {
+    try {
+      final List<Widget> widgetList = [];
+
+      /// slip title ------------------------------------------------------------------
+      addReceiptTitleWidget(widgetList, "MASA ADİSYONU");
+      addEmptyLinesWidget(widgetList);
+
+      /// header ------------------------------------------------------------------
+      addHeaderWidget(widgetList, printData.printData!);
+
+      /// Orders ------------------------------------------------------------------
+      for (var order in printData.printData!.orders!) {
+        /// order header ------------------------------------------------------------------
+        addOrderHeaderWidget(widgetList, order, printPayment: false);
+        addSeparatorWidget(widgetList);
+
+        /// order detail ------------------------------------------------------------------
+        widgetList.add(createColumnFromOrderDetailWidget(order.items!));
+        addSeparatorWidget(widgetList);
+      }
+
+      /// payment detail ------------------------------------------------------------------
+      addPaymentDetailWidget(widgetList, printData.printData!);
+      addEmptyLinesWidget(widgetList);
+
+      /// footer ------------------------------------------------------------------
+      addFooterWidget(widgetList, printData.printData!.dealerInfo);
+
+      final image = await createImageFromWidget(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: widgetList,
+        ),
+      );
+
+      return convertImageToByteAndCut(image);
     } catch (e) {
       rethrow;
     }
@@ -288,6 +542,100 @@ class ReceiptDesign extends DesignFunctions {
     }
   }
 
+  /// print Report
+  Future<List<int>> createReceiptForReportWidget(DailyReportModel printModel) async {
+    try {
+      final List<Widget> widgetList = [];
+
+      /// slip title ------------------------------------------------------------------
+      addReceiptTitleWidget(widgetList, "GÜN SONU");
+      addEmptyLinesWidget(widgetList);
+
+      /// startDate ------------------------------------------------------------------
+      final startDate = DateTime.parse(printModel.startDate!).formatDateTimeForTipListView();
+      final endDate = DateTime.parse(printModel.endDate!).formatDateTimeForTipListView();
+
+      if (startDate == endDate) {
+        addTowColumnWidget(widgetList, 'Tarih: ', startDate);
+      } else {
+        addTowColumnWidget(
+          widgetList,
+          'Başlangıç Tarihi: ',
+          startDate,
+        );
+        addTowColumnWidget(
+          widgetList,
+          'Bitiş Tarihi: ',
+          endDate,
+        );
+      }
+
+      addEmptyLinesWidget(widgetList);
+
+      /// Ödeme Tipi ------------------------------------------------------------------
+      addTowColumnWidget(widgetList, 'AdetXÖdeme Tipi', 'Tutar');
+      addSeparatorWidget(widgetList);
+
+      for (var model in printModel.paymentTypes!) {
+        final title =
+            model.paymentType!.enumFromString<PaymentTypeEnum>(PaymentTypeEnum.values)?.title ?? model.paymentType!;
+
+        addTowColumnWidget(
+          widgetList,
+          '${model.count}X$title',
+          '${model.turnover?.getPrice()}',
+        );
+      }
+
+      addEmptyLinesWidget(widgetList);
+
+      /// Sipariş Durum ------------------------------------------------------------------
+      addTowColumnWidget(widgetList, 'AdetXSipariş Durum', 'Tutar');
+      addSeparatorWidget(widgetList);
+
+      for (var model in printModel.statusTypes!) {
+        final title = model.statusType!.enumFromString<AllOrderTypeStatusEnum>(AllOrderTypeStatusEnum.values)?.title ??
+            model.statusType!;
+
+        addTowColumnWidget(
+          widgetList,
+          '${model.count}X$title',
+          '${model.turnover?.getPrice()}',
+        );
+      }
+
+      addEmptyLinesWidget(widgetList);
+
+      /// Ürünler ------------------------------------------------------------------
+      addTowColumnWidget(widgetList, 'AdetXÜrün Adı', 'Tutar');
+      addSeparatorWidget(widgetList);
+
+      for (var model in printModel.orderItems!) {
+        addTowColumnWidget(
+          widgetList,
+          '${model.count}X${model.title}',
+          '${model.turnover?.getPrice()}',
+        );
+      }
+
+      addEmptyLinesWidget(widgetList);
+
+      /// Footer ------------------------------------------------------------------
+      addFooterWidget(widgetList, null);
+
+      final image = await createImageFromWidget(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: widgetList,
+        ),
+      );
+
+      return convertImageToByteAndCut(image);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<List<int>> printKitchenOrderByWidget(PrinterQueueResponseModel printData) async {
     final List<Widget> widgetList = [];
 
@@ -317,28 +665,70 @@ class ReceiptDesign extends DesignFunctions {
       ),
     );
 
-    List<int> byte = [];
-    byte += generator.image(image);
-    byte += generator.cut();
-
-    return byte;
+    return convertImageToByteAndCut(image);
   }
 
   Future<List<int>> testTicket() async {
     List<int> byte = [];
     await addQR(byte, 'https://siparisim.com.tr/');
     addEmptyLines(byte);
-    // await add3PartLogo(byte, ThirdPartClientPointId.GETIR.name);
-    // addEmptyLines(byte);
-    // await add3PartLogo(byte, ThirdPartClientPointId.MIGROSYEMEK.name);
-    // addEmptyLines(byte);
-    // await add3PartLogo(byte, ThirdPartClientPointId.YEMEKSEPETI.name);
-    // addEmptyLines(byte);
-    // await add3PartLogo(byte, ThirdPartClientPointId.TRENDYOL.name);
-    // addEmptyLines(byte);
     addFooter(byte, null);
     addEmptyLines(byte);
     cut(byte);
     return byte;
+  }
+
+  Future<List<int>> testTicketWidget() async {
+    try {
+      final List<Widget> widgetList = [];
+
+      /// QR ------------------------------------------------------------------
+      await addInvoiceQRLinkWidget(
+        widgetList,
+        'https://siparisim.com.tr/',
+      );
+
+      addEmptyLinesWidget(widgetList);
+
+      /// 3. parti logo ------------------------------------------------------------------
+      // await add3PartLogoWidget(
+      //   widgetList,
+      //   ThirdPartClientPointId.GETIR.name,
+      // );
+      // addEmptyLinesWidget(widgetList);
+
+      // await add3PartLogoWidget(
+      //   widgetList,
+      //   ThirdPartClientPointId.MIGROSYEMEK.name,
+      // );
+      // addEmptyLinesWidget(widgetList);
+
+      // await add3PartLogoWidget(
+      //   widgetList,
+      //   ThirdPartClientPointId.YEMEKSEPETI.name,
+      // );
+      // addEmptyLinesWidget(widgetList);
+
+      // await add3PartLogoWidget(
+      //   widgetList,
+      //   ThirdPartClientPointId.TRENDYOL.name,
+      // );
+      // addEmptyLinesWidget(widgetList);
+
+      /// Footer ------------------------------------------------------------------
+      addFooterWidget(widgetList, null);
+      addEmptyLinesWidget(widgetList);
+
+      final image = await createImageFromWidget(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: widgetList,
+        ),
+      );
+
+      return convertImageToByteAndCut(image);
+    } catch (e) {
+      rethrow;
+    }
   }
 }

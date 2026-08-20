@@ -426,7 +426,7 @@ abstract class DesignFunctions {
     if (printCustomerAddress) {
       addEmptyLinesWidget(widgetList);
       widgetList.add(
-        addRowWidget('Telefon No: ', order.customerAddress?.getFullAddress ?? '-'),
+        addRowWidget('Adres: ', order.customerAddress?.getFullAddress ?? '-'),
       );
     }
 
@@ -782,6 +782,44 @@ abstract class DesignFunctions {
     );
   }
 
+  void addPaymentDetailWidget(
+    List<Widget> widgetList,
+    PrinterQueueResponsePrintDataModel printData,
+  ) {
+    /// tip amount ------------------------------------------------------------------
+    if (printData.totalTipAmount != null && printData.totalTipAmount != 0) {
+      final totalTipAmount = '${printData.totalTipAmount?.toStringAsFixed(2)} TL';
+
+      widgetList.add(
+        addRowWidget('Bahşiş: ', totalTipAmount),
+      );
+    }
+
+    /// service to table amount ------------------------------------------------------------------
+    if (printData.tableServiceAmount != null && printData.tableServiceAmount != 0) {
+      final tableServiceAmount = '${printData.tableServiceAmount?.toStringAsFixed(2)} TL';
+
+      widgetList.add(
+        addRowWidget('Masaya Servis: ', tableServiceAmount),
+      );
+    }
+
+    /// total amount ------------------------------------------------------------------
+    final double totalAmount;
+    if (printData.orders!.first.orderPointId == OrderPoint.TABLE.name) {
+      totalAmount = printData.serviceTotalAmount!;
+    } else {
+      totalAmount = printData.orders!.first.totalAmount!;
+    }
+
+    widgetList.add(
+      addRowWidget(
+        'TOPLAM TUTAR: ',
+        '${totalAmount.toStringAsFixed(2)} TL',
+      ),
+    );
+  }
+
   void addFooter(List<int> byte, PrinterQueueDealerInfoModel? dealerIndo) {
     /// dealer name ------------------------------------------------------------------
     byte.addAll(
@@ -815,6 +853,27 @@ abstract class DesignFunctions {
         ),
         PosColumn(width: 1, text: '', styles: const PosStyles(align: PosAlign.left)),
       ]),
+    );
+  }
+
+  void addFooterWidget(
+    List<Widget> widgetList,
+    PrinterQueueDealerInfoModel? dealerInfo,
+  ) {
+    /// dealer name ------------------------------------------------------------------
+    addCenterTextWidget(
+      widgetList,
+      (dealerInfo?.dealerName ?? SipPrinter.instance.headerTitle).toString(),
+      fontSize: 36,
+      fontWeight: FontWeight.bold,
+    );
+
+    /// dealer address ------------------------------------------------------------------
+    addCenterTextWidget(
+      widgetList,
+      (dealerInfo?.address ?? SipPrinter.instance.footerTitle).toString(),
+      fontSize: 36,
+      fontWeight: FontWeight.bold,
     );
   }
 
@@ -889,6 +948,20 @@ abstract class DesignFunctions {
     }
   }
 
+  double getSizeWidget(String? size) {
+    if (size == PrinterFontSizeEnum.XL.name) {
+      return 20;
+    } else if (size == PrinterFontSizeEnum.LG.name) {
+      return 18;
+    } else if (size == PrinterFontSizeEnum.MD.name) {
+      return 16;
+    } else if (size == PrinterFontSizeEnum.SM.name) {
+      return 14;
+    } else {
+      return 12;
+    }
+  }
+
   /// tek satırda iki sütün oluşturur
   String _createTowColumn(String col1, String col2) =>
       (col1 + (' ' * (maxLineCharacterCount - col2.length - col1.length)) + col2).withoutDiacriticalMarks();
@@ -953,6 +1026,14 @@ abstract class DesignFunctions {
     );
   }
 
+  /// tek satırda iki sütun oluşturur
+  void addTowColumnWidget(
+    List<Widget> widgetList,
+    String col1,
+    String col2,
+  ) =>
+      widgetList.add(addRowWidget(col1, col2));
+
   Future<void> addInvoiceQRLink(List<int> byte, String link) async {
     await addQR(byte, link);
     byte.addAll(
@@ -967,6 +1048,35 @@ abstract class DesignFunctions {
         styles: const PosStyles(align: PosAlign.center),
       ),
     );
+  }
+
+  Future<void> addInvoiceQRLinkWidget(List<Widget> widgetList, String link) async {
+    try {
+      final qrImage = await QrPainter(
+        data: link,
+        version: QrVersions.auto,
+        gapless: true,
+      ).toImageData(300);
+
+      widgetList.add(
+        Image.memory(
+          qrImage!.buffer.asUint8List(),
+          width: 300,
+          height: 300,
+          fit: BoxFit.contain,
+        ),
+      );
+
+      addCenterTextWidget(widgetList, 'E-Belgeye erişmek için', fontSize: 36, fontWeight: FontWeight.bold);
+      addCenterTextWidget(widgetList, 'yukarıdaki QR kodu okutunuz.', fontSize: 36, fontWeight: FontWeight.bold);
+    } catch (e) {
+      addCenterTextWidget(
+        widgetList,
+        link,
+        fontSize: 36,
+        fontWeight: FontWeight.bold,
+      );
+    }
   }
 
   Future<void> addQR(List<int> byte, String link, {double size = 300}) async {
@@ -1028,13 +1138,51 @@ abstract class DesignFunctions {
     }
   }
 
-  addRowWidget(String txt1, String txt2) => Row(
+  Future<void> add3PartLogoWidget(
+    List<Widget> widgetList,
+    String? clientPointId,
+  ) async {
+    final is3PartOrder = ThirdPartClientPointId.values.firstWhereOrNull((e) => e.name == clientPointId);
+    final String assetsPath;
+    switch (is3PartOrder) {
+      case null:
+        return;
+      case ThirdPartClientPointId.MIGROSYEMEK:
+        assetsPath = 'packages/sip_printer/assets/logo/migrosyemek_logo.jpg';
+        break;
+      case ThirdPartClientPointId.GETIR:
+        assetsPath = 'packages/sip_printer/assets/logo/getiryemek_logo.jpg';
+        break;
+      case ThirdPartClientPointId.TRENDYOL:
+        assetsPath = 'packages/sip_printer/assets/logo/trendyolyemek_logo.jpg';
+        break;
+      case ThirdPartClientPointId.YEMEKSEPETI:
+        assetsPath = 'packages/sip_printer/assets/logo/yemeksepeti_logo.jpg';
+        break;
+    }
+
+    try {
+      widgetList.add(
+        Image.asset(
+          assetsPath,
+          width: 300,
+          fit: BoxFit.contain,
+        ),
+      );
+    } catch (e) {
+      if (clientPointId != null) {
+        addReceiptTitleWidget(widgetList, clientPointId);
+      }
+    }
+  }
+
+  addRowWidget(String col1, String col2) => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             flex: 4,
             child: Text(
-              txt1,
+              col1,
               style: TextStyle(
                 fontSize: 36,
                 fontFamily: fontFamily,
@@ -1046,7 +1194,7 @@ abstract class DesignFunctions {
           Expanded(
             flex: 6,
             child: Text(
-              txt2,
+              col2,
               style: TextStyle(
                 fontSize: 36,
                 fontFamily: fontFamily,
@@ -1103,5 +1251,13 @@ abstract class DesignFunctions {
     final bytes = byteData!.buffer.asUint8List();
 
     return img.decodeImage(bytes)!;
+  }
+
+  List<int> convertImageToByteAndCut(img.Image image) {
+    List<int> byte = [];
+    byte += generator.image(image);
+    byte += generator.cut();
+
+    return byte;
   }
 }
