@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
@@ -1051,20 +1052,17 @@ abstract class DesignFunctions {
     );
   }
 
-  Future<void> addInvoiceQRLinkWidget(List<Widget> widgetList, String link) async {
+  void addInvoiceQRLinkWidget(List<Widget> widgetList, String link) {
     try {
-      final qrImage = await QrPainter(
-        data: link,
-        version: QrVersions.auto,
-        gapless: true,
-      ).toImageData(300);
-
       widgetList.add(
-        Image.memory(
-          qrImage!.buffer.asUint8List(),
-          width: 300,
-          height: 300,
-          fit: BoxFit.contain,
+        Align(
+          alignment: Alignment.center,
+          child: QrImageView(
+            padding: const EdgeInsets.all(15),
+            data: link,
+            version: QrVersions.auto,
+            size: 300,
+          ),
         ),
       );
 
@@ -1143,31 +1141,38 @@ abstract class DesignFunctions {
     List<Widget> widgetList,
     String? clientPointId,
   ) async {
-    final is3PartOrder = ThirdPartClientPointId.values.firstWhereOrNull((e) => e.name == clientPointId);
-    final String assetsPath;
-    switch (is3PartOrder) {
-      case null:
-        return;
-      case ThirdPartClientPointId.MIGROSYEMEK:
-        assetsPath = 'packages/sip_printer/assets/logo/migrosyemek_logo.jpg';
-        break;
-      case ThirdPartClientPointId.GETIR:
-        assetsPath = 'packages/sip_printer/assets/logo/getiryemek_logo.jpg';
-        break;
-      case ThirdPartClientPointId.TRENDYOL:
-        assetsPath = 'packages/sip_printer/assets/logo/trendyolyemek_logo.jpg';
-        break;
-      case ThirdPartClientPointId.YEMEKSEPETI:
-        assetsPath = 'packages/sip_printer/assets/logo/yemeksepeti_logo.jpg';
-        break;
-    }
-
     try {
+      final is3PartOrder = ThirdPartClientPointId.values.firstWhereOrNull((e) => e.name == clientPointId);
+      String? assetsPath;
+      switch (is3PartOrder) {
+        case ThirdPartClientPointId.MIGROSYEMEK:
+          assetsPath = 'assets/logo/migrosyemek_logo.jpg';
+          break;
+        case ThirdPartClientPointId.GETIR:
+          assetsPath = 'assets/logo/getiryemek_logo.jpg';
+          break;
+        case ThirdPartClientPointId.TRENDYOL:
+          assetsPath = 'assets/logo/trendyolyemek_logo.jpg';
+          break;
+        case ThirdPartClientPointId.YEMEKSEPETI:
+          assetsPath = 'assets/logo/yemeksepeti_logo.jpg';
+          break;
+        case null:
+          break;
+      }
+
+      final provider = ExactAssetImage(
+        assetsPath!,
+        package: 'sip_printer',
+      );
+
+      await _loadImage(provider);
+
       widgetList.add(
-        Image.asset(
-          assetsPath,
-          width: 300,
-          fit: BoxFit.contain,
+        Image(
+          image: provider,
+          width: 100,
+          fit: BoxFit.scaleDown,
         ),
       );
     } catch (e) {
@@ -1175,6 +1180,37 @@ abstract class DesignFunctions {
         addReceiptTitleWidget(widgetList, clientPointId);
       }
     }
+  }
+
+  Future<void> _loadImage(ImageProvider provider) {
+    final completer = Completer<void>();
+
+    final stream = provider.resolve(
+      const ImageConfiguration(),
+    );
+
+    late final ImageStreamListener listener;
+
+    listener = ImageStreamListener(
+      (ImageInfo image, bool synchronousCall) {
+        stream.removeListener(listener);
+
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      },
+      onError: (Object error, StackTrace? stackTrace) {
+        stream.removeListener(listener);
+
+        if (!completer.isCompleted) {
+          completer.completeError(error, stackTrace);
+        }
+      },
+    );
+
+    stream.addListener(listener);
+
+    return completer.future;
   }
 
   addRowWidget(String col1, String col2, {int flex1 = 5, int flex2 = 6}) => Row(
