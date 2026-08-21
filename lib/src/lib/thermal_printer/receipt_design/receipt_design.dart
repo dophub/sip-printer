@@ -275,7 +275,7 @@ class ReceiptDesign extends DesignFunctions {
         /// Invoice QR Link
         /// birden fazla order varsa her order için ayrı ayrı qr basar
         if (printData.printData!.orders!.length > 1 && order.invoiceSuccessLink != null) {
-          await addInvoiceQRLinkWidget(widgetList, order.invoiceSuccessLink!);
+          addInvoiceQRLinkWidget(widgetList, order.invoiceSuccessLink!);
           addSeparatorWidget(widgetList);
         }
       }
@@ -289,7 +289,7 @@ class ReceiptDesign extends DesignFunctions {
       /// bitane order varsa fişin sonunda bitane qr basar
       if (printData.printData!.orders!.length == 1 && printData.printData!.orders!.first.invoiceSuccessLink != null) {
         addSeparatorWidget(widgetList);
-        await addInvoiceQRLinkWidget(widgetList, printData.printData!.orders!.first.invoiceSuccessLink!);
+        addInvoiceQRLinkWidget(widgetList, printData.printData!.orders!.first.invoiceSuccessLink!);
         addSeparatorWidget(widgetList);
       }
 
@@ -685,37 +685,41 @@ class ReceiptDesign extends DesignFunctions {
       final List<Widget> widgetList = [];
 
       /// QR ------------------------------------------------------------------
-      await addInvoiceQRLinkWidget(
+      addInvoiceQRLinkWidget(
         widgetList,
         'https://siparisim.com.tr/',
       );
 
       addEmptyLinesWidget(widgetList);
+      addTextWidget(widgetList, 'Siparisim', fontWeight: FontWeight.bold);
 
       /// 3. parti logo ------------------------------------------------------------------
-      // await add3PartLogoWidget(
-      //   widgetList,
-      //   ThirdPartClientPointId.GETIR.name,
-      // );
-      // addEmptyLinesWidget(widgetList);
+      await add3PartLogoWidget(
+        widgetList,
+        ThirdPartClientPointId.GETIR.name,
+      );
+      addEmptyLinesWidget(widgetList);
+      addTextWidget(widgetList, 'Siparisim', fontWeight: FontWeight.bold);
 
-      // await add3PartLogoWidget(
-      //   widgetList,
-      //   ThirdPartClientPointId.MIGROSYEMEK.name,
-      // );
-      // addEmptyLinesWidget(widgetList);
+      await add3PartLogoWidget(
+        widgetList,
+        ThirdPartClientPointId.MIGROSYEMEK.name,
+      );
+      addEmptyLinesWidget(widgetList);
+      addTextWidget(widgetList, 'Siparisim', fontWeight: FontWeight.bold);
 
-      // await add3PartLogoWidget(
-      //   widgetList,
-      //   ThirdPartClientPointId.YEMEKSEPETI.name,
-      // );
-      // addEmptyLinesWidget(widgetList);
+      await add3PartLogoWidget(
+        widgetList,
+        ThirdPartClientPointId.YEMEKSEPETI.name,
+      );
+      addEmptyLinesWidget(widgetList);
+      addTextWidget(widgetList, 'Siparisim', fontWeight: FontWeight.bold);
 
-      // await add3PartLogoWidget(
-      //   widgetList,
-      //   ThirdPartClientPointId.TRENDYOL.name,
-      // );
-      // addEmptyLinesWidget(widgetList);
+      await add3PartLogoWidget(
+        widgetList,
+        ThirdPartClientPointId.TRENDYOL.name,
+      );
+      addEmptyLinesWidget(widgetList);
 
       /// Footer ------------------------------------------------------------------
       addFooterWidget(widgetList, null);
