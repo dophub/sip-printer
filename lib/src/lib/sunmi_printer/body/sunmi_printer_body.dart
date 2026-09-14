@@ -1,91 +1,94 @@
 import 'dart:async';
 import 'package:sip_models/request.dart';
 import 'package:sip_printer/src/extanstion/extension_string.dart';
-import 'package:sunmi_printer_plus/column_maker.dart';
-import 'package:sunmi_printer_plus/enums.dart';
 import 'package:sunmi_printer_plus/sunmi_printer_plus.dart';
 
 class SunmiPrinterBody {
-  SunmiPrinterBody();
+  final SunmiPrinterPlus sunmiPrinterPlus;
+
+  SunmiPrinterBody({required this.sunmiPrinterPlus});
 
   Future<void> printBodyTABLE(List<OrderItem> orderList) async {
-    await SunmiPrinter.initPrinter().then((var init) async {
-      if (init!) {
-        //AREA 3 - Titles
-        for (OrderItem item in orderList) {
-          await SunmiPrinter.printRow(cols: [
-            ColumnMaker(
-              text: '${item.count}x',
-              width: 4,
-            ),
-            ColumnMaker(
-              text: stringRowCreater(item.itemTitle!, 19),
-              width: 19,
-              align: SunmiPrintAlign.LEFT,
-            ),
-            ColumnMaker(text: '${item.totalPrice}TL', width: 8, align: SunmiPrintAlign.RIGHT),
-          ]);
-          await itemOptionBuilder(item);
-        }
-        //DIVIDER
-        await SunmiPrinter.line();
-        //TOTAL
-      }
-    });
+    //AREA 3 - Titles
+    for (OrderItem item in orderList) {
+      await sunmiPrinterPlus.printRow(
+        cols: [
+          SunmiColumn(
+            text: '${item.count}x',
+            width: 4,
+          ),
+          SunmiColumn(
+            text: stringRowCreater(item.itemTitle!, 19),
+            width: 19,
+            style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
+          ),
+          SunmiColumn(
+            text: '${item.totalPrice}TL',
+            width: 8,
+            style: SunmiTextStyle(align: SunmiPrintAlign.RIGHT),
+          ),
+        ],
+      );
+      await itemOptionBuilder(item);
+    }
+    //DIVIDER
+    await addLine();
   }
 
-  Future<void> printBodyTAKEOUT(List<OrderItem> orderList) async {
-    await SunmiPrinter.initPrinter().then((var init) async {
-      if (init!) {
-        //AREA 3 - Titles
+  Future addLine([int time = 1]) async {
+    for (var i = 0; i < time; i++) {
+      await sunmiPrinterPlus.printText(text: ' ');
+    }
+  }
 
-        for (var item in orderList) {
-          await SunmiPrinter.printRow(cols: [
-            ColumnMaker(
-              text: '${item.count}x',
-              width: 4,
-            ),
-            ColumnMaker(
-              text: stringRowCreater(item.itemTitle!, 20),
-              width: 20,
-              align: SunmiPrintAlign.LEFT,
-            ),
-            ColumnMaker(text: '${item.totalPrice}TL', width: 7, align: SunmiPrintAlign.RIGHT),
-          ]);
-          await itemOptionBuilder(item);
-        }
-        //DIVIDER
-        await SunmiPrinter.line();
-        //TOTAL
-      }
-    });
+
+  Future<void> printBodyTAKEOUT(List<OrderItem> orderList) async {
+    for (var item in orderList) {
+      await sunmiPrinterPlus.printRow(cols: [
+        SunmiColumn(
+          text: '${item.count}x',
+          width: 4,
+        ),
+        SunmiColumn(
+          text: stringRowCreater(item.itemTitle!, 20),
+          width: 20,
+          style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
+        ),
+        SunmiColumn(
+          text: '${item.totalPrice}TL',
+          width: 7,
+          style: SunmiTextStyle(align: SunmiPrintAlign.RIGHT),
+        ),
+      ]);
+      await itemOptionBuilder(item);
+    }
+    //DIVIDER
+    await addLine();
   }
 
   Future<void> printBodyGETIN(List<OrderItem> orderList) async {
-    await SunmiPrinter.initPrinter().then((var init) async {
-      if (init!) {
-        //AREA 3 - Titles
+    for (var item in orderList) {
+      await sunmiPrinterPlus.printRow(cols: [
+        SunmiColumn(
+          text: '${item.count}x',
+          width: 4,
+        ),
+        SunmiColumn(
+          text: stringRowCreater(item.itemTitle!, 20),
+          width: 20,
+          style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
+        ),
+        SunmiColumn(
+          text: '${item.totalPrice}TL',
+          width: 7,
+          style: SunmiTextStyle(align: SunmiPrintAlign.RIGHT),
+        ),
+      ]);
+      await itemOptionBuilder(item);
+    }
 
-        for (var item in orderList) {
-          await SunmiPrinter.printRow(cols: [
-            ColumnMaker(
-              text: '${item.count}x',
-              width: 4,
-            ),
-            ColumnMaker(
-              text: stringRowCreater(item.itemTitle!, 20),
-              width: 20,
-              align: SunmiPrintAlign.LEFT,
-            ),
-            ColumnMaker(text: '${item.totalPrice}TL', width: 7, align: SunmiPrintAlign.RIGHT),
-          ]);
-          await itemOptionBuilder(item);
-        }
-
-        //DIVIDER
-        await SunmiPrinter.line();
-      }
-    });
+    //DIVIDER
+    await addLine();
   }
 
   String stringRowCreater(String text, int textLength) {
@@ -117,27 +120,27 @@ class SunmiPrinterBody {
   Future<void> itemOptionBuilder(OrderItem item) async {
     if (item.promotionMenuId == null) {
       for (OrderOption option in item.options!) {
-        await SunmiPrinter.printRow(cols: [
-          ColumnMaker(
+        await sunmiPrinterPlus.printRow(cols: [
+          SunmiColumn(
             text: '',
             width: 4,
           ),
-          ColumnMaker(
+          SunmiColumn(
             text: stringRowCreater('${option.title!}:'.withoutDiacriticalMarks(), 27),
             width: 27,
-            align: SunmiPrintAlign.LEFT,
+            style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
           ),
         ]);
         for (OrderOptionItem optionItem in option.items!) {
-          await SunmiPrinter.printRow(cols: [
-            ColumnMaker(
+          await sunmiPrinterPlus.printRow(cols: [
+            SunmiColumn(
               text: '',
               width: 4,
             ),
-            ColumnMaker(
+            SunmiColumn(
               text: stringRowCreater(optionItem.title!..withoutDiacriticalMarks, 27),
               width: 27,
-              align: SunmiPrintAlign.LEFT,
+              style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
             ),
           ]);
         }
@@ -145,54 +148,54 @@ class SunmiPrinterBody {
     }
     if (item.promotionMenuId != null) {
       for (OrderOption option in item.options!) {
-        await SunmiPrinter.printRow(cols: [
-          ColumnMaker(
+        await sunmiPrinterPlus.printRow(cols: [
+          SunmiColumn(
             text: '',
             width: 4,
-            align: SunmiPrintAlign.LEFT,
+            style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
           ),
-          ColumnMaker(
+          SunmiColumn(
             text: stringRowCreater('${option.sectionTitle!}:'.withoutDiacriticalMarks(), 31),
             width: 27,
-            align: SunmiPrintAlign.LEFT,
+            style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
           ),
         ]);
-        await SunmiPrinter.printRow(cols: [
-          ColumnMaker(
+        await sunmiPrinterPlus.printRow(cols: [
+          SunmiColumn(
             text: '',
             width: 4,
-            align: SunmiPrintAlign.LEFT,
+            style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
           ),
-          ColumnMaker(
+          SunmiColumn(
             text: stringRowCreater(option.sectionItem!.productName!.withoutDiacriticalMarks(), 31),
             width: 27,
-            align: SunmiPrintAlign.LEFT,
+            style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
           ),
         ]);
         for (var sectionOption in option.sectionItem!.options!) {
-          await SunmiPrinter.printRow(cols: [
-            ColumnMaker(
+          await sunmiPrinterPlus.printRow(cols: [
+            SunmiColumn(
               text: '',
               width: 4,
-              align: SunmiPrintAlign.LEFT,
+              style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
             ),
-            ColumnMaker(
+            SunmiColumn(
               text: stringRowCreater('${sectionOption.title}:'.withoutDiacriticalMarks(), 31),
               width: 27,
-              align: SunmiPrintAlign.LEFT,
+              style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
             ),
           ]);
           for (var sectionOptionItem in sectionOption.items!) {
-            await SunmiPrinter.printRow(cols: [
-              ColumnMaker(
+            await sunmiPrinterPlus.printRow(cols: [
+              SunmiColumn(
                 text: '',
                 width: 4,
-                align: SunmiPrintAlign.LEFT,
+                style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
               ),
-              ColumnMaker(
+              SunmiColumn(
                 text: stringRowCreater(sectionOptionItem.title!.withoutDiacriticalMarks(), 31),
                 width: 27,
-                align: SunmiPrintAlign.LEFT,
+                style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
               ),
             ]);
           }
@@ -200,16 +203,16 @@ class SunmiPrinterBody {
       }
     }
     if (!(item.itemNote == null || item.itemNote!.isEmpty)) {
-      await SunmiPrinter.printRow(cols: [
-        ColumnMaker(
+      await sunmiPrinterPlus.printRow(cols: [
+        SunmiColumn(
           text: '',
           width: 4,
-          align: SunmiPrintAlign.LEFT,
+          style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
         ),
-        ColumnMaker(
+        SunmiColumn(
           text: stringRowCreater('Ürün Notu: ${item.itemNote!}'.withoutDiacriticalMarks(), 27),
           width: 27,
-          align: SunmiPrintAlign.LEFT,
+          style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
         ),
       ]);
     }

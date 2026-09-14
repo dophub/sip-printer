@@ -4,13 +4,13 @@ import 'package:sip_models/enum.dart';
 import 'package:sip_models/request.dart';
 import 'package:sip_models/response.dart';
 import 'package:sip_models/ri_models.dart';
+import 'package:sunmi_printer_plus/sunmi_printer_plus.dart';
 
 import 'body/sunmi_printer_body.dart';
 import 'footer/sunmi_printer_footer.dart';
 import 'header/sunmi_printer_header.dart';
-import 'sunmi_print_service.dart';
 
-class SunmiPrinter extends SunmiPrinterService {
+class SunmiPrinter {
   SunmiPrinter._() : super();
 
   //OrderPoint in tipine göre nesne üretilir.
@@ -24,7 +24,7 @@ class SunmiPrinter extends SunmiPrinterService {
     required String callNumber,
     required CustomerAddressModel? customerAddress,
     required String? orderNote,
-    required PaymentInfo paymentInfo,
+    required PaymentInfo? paymentInfo,
     required bool isCompleteOrder,
   }) {
     if (orderPoint == DeliveryType.TABLE.name) {
@@ -68,9 +68,10 @@ class SunmiPrinter extends SunmiPrinterService {
     required String orderNumber,
   }) {
     Timer.run(() async {
-      await SunmiPrinterHeader().printHeaderTABLE(tableName: tableName, orderNumber: orderNumber);
-      await SunmiPrinterBody().printBodyTABLE(orderList);
-      await SunmiPrinterFooter().printFooterTABLE(serviceTotalAmount);
+      final SunmiPrinterPlus sunmiPrinterPlus = SunmiPrinterPlus();
+      await SunmiPrinterHeader(sunmiPrinterPlus: sunmiPrinterPlus).printHeaderTABLE(tableName: tableName, orderNumber: orderNumber);
+      await SunmiPrinterBody(sunmiPrinterPlus: sunmiPrinterPlus).printBodyTABLE(orderList);
+      await SunmiPrinterFooter(sunmiPrinterPlus: sunmiPrinterPlus).printFooterTABLE(serviceTotalAmount);
     });
   }
 
@@ -82,18 +83,19 @@ class SunmiPrinter extends SunmiPrinterService {
     required CustomerAddressModel? customerAddress,
     required String? orderNote,
     required double totalAmount,
-    required PaymentInfo paymentInfo,
+    required PaymentInfo? paymentInfo,
     required bool isCompleteOrder,
   }) {
     Timer.run(() async {
-      await SunmiPrinterHeader().printHeaderTAKEOUT(
+      final SunmiPrinterPlus sunmiPrinterPlus = SunmiPrinterPlus();
+      await SunmiPrinterHeader(sunmiPrinterPlus: sunmiPrinterPlus).printHeaderTAKEOUT(
         orderNumber: orderNumber,
         nameSurname: nameSurname,
         customerAddress: customerAddress,
         orderNote: orderNote,
       );
-      await SunmiPrinterBody().printBodyTAKEOUT(orderList);
-      await SunmiPrinterFooter().printFooterTAKEOUT(
+      await SunmiPrinterBody(sunmiPrinterPlus: sunmiPrinterPlus).printBodyTAKEOUT(orderList);
+      await SunmiPrinterFooter(sunmiPrinterPlus: sunmiPrinterPlus).printFooterTAKEOUT(
         totalAmount: totalAmount,
         paymentInfo: paymentInfo,
         isCompleteOrder: isCompleteOrder,
@@ -109,18 +111,19 @@ class SunmiPrinter extends SunmiPrinterService {
     required String? callNumber,
     required String? orderNote,
     required double totalAmount,
-    required PaymentInfo paymentInfo,
+    required PaymentInfo? paymentInfo,
     required bool isCompleteOrder,
   }) {
     Timer.run(() async {
-      await SunmiPrinterHeader().printHeaderGETIN(
+      final SunmiPrinterPlus sunmiPrinterPlus = SunmiPrinterPlus();
+      await SunmiPrinterHeader(sunmiPrinterPlus: sunmiPrinterPlus).printHeaderGETIN(
         orderNumber: orderNumber,
         nameSurname: nameSurname,
         callNumber: callNumber,
         orderNote: orderNote,
       );
-      await SunmiPrinterBody().printBodyGETIN(orderList);
-      await SunmiPrinterFooter().printFooterGETIN(
+      await SunmiPrinterBody(sunmiPrinterPlus: sunmiPrinterPlus).printBodyGETIN(orderList);
+      await SunmiPrinterFooter(sunmiPrinterPlus: sunmiPrinterPlus).printFooterGETIN(
         totalAmount: totalAmount,
         paymentInfo: paymentInfo,
         isCompleteOrder: isCompleteOrder,
@@ -130,7 +133,8 @@ class SunmiPrinter extends SunmiPrinterService {
 
   SunmiPrinter.testReceipt() {
     Timer.run(() async {
-      await SunmiPrinterHeader().printTestReceipt();
+      final SunmiPrinterPlus sunmiPrinterPlus = SunmiPrinterPlus();
+      await SunmiPrinterHeader(sunmiPrinterPlus: sunmiPrinterPlus).printTestReceipt();
     });
   }
 
@@ -143,7 +147,8 @@ class SunmiPrinter extends SunmiPrinterService {
     String? invoiceLink,
   }) {
     Timer.run(() async {
-      await SunmiPrinterHeader().printForBackgroundProcess(
+      final SunmiPrinterPlus sunmiPrinterPlus = SunmiPrinterPlus();
+      await SunmiPrinterHeader(sunmiPrinterPlus: sunmiPrinterPlus).printForBackgroundProcess(
         printData: printData,
         isPayment: isPayment,
         paymentModelId: paymentModelId,

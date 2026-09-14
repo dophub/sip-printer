@@ -16,7 +16,7 @@ dependencies:
    git:
     url: https://github.com/Mto292/esc_pos_utils_plus.git
     ref: main
-  sunmi_printer_plus: ^3.0.0
+  sunmi_printer_plus: ^4.1.1
   intl: any
   collection: any
   qr_flutter: ^4.1.0

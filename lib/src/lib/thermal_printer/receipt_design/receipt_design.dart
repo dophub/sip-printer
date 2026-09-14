@@ -75,14 +75,12 @@ class ReceiptDesign extends DesignFunctions {
       /// dealer name ------------------------------------------------------------------
       addFooterWidget(widgetList, printData.printData!.dealerInfo);
 
-      final image = await createImageFromWidget(
+      return await createImageAndConvert(
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: widgetList,
         ),
       );
-
-      return convertImageToByteAndCut(image);
     } catch (e) {
       rethrow;
     }
@@ -145,14 +143,12 @@ class ReceiptDesign extends DesignFunctions {
       /// footer ------------------------------------------------------------------
       addFooterWidget(widgetList, printData.printData!.dealerInfo);
 
-      final image = await createImageFromWidget(
+      return await createImageAndConvert(
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: widgetList,
         ),
       );
-
-      return convertImageToByteAndCut(image);
     } catch (e) {
       rethrow;
     }
@@ -304,14 +300,12 @@ class ReceiptDesign extends DesignFunctions {
       /// Footer ------------------------------------------------------------------
       addFooterWidget(widgetList, printData.printData!.dealerInfo);
 
-      final image = await createImageFromWidget(
+      return await createImageAndConvert(
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: widgetList,
         ),
       );
-
-      return convertImageToByteAndCut(image);
     } catch (e) {
       rethrow;
     }
@@ -394,14 +388,12 @@ class ReceiptDesign extends DesignFunctions {
       /// footer ------------------------------------------------------------------
       addFooterWidget(widgetList, printData.printData!.dealerInfo);
 
-      final image = await createImageFromWidget(
+      return await createImageAndConvert(
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: widgetList,
         ),
       );
-
-      return convertImageToByteAndCut(image);
     } catch (e) {
       rethrow;
     }
@@ -472,14 +464,12 @@ class ReceiptDesign extends DesignFunctions {
       /// footer ------------------------------------------------------------------
       addFooterWidget(widgetList, printData.printData!.dealerInfo);
 
-      final image = await createImageFromWidget(
+      return await createImageAndConvert(
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: widgetList,
         ),
       );
-
-      return convertImageToByteAndCut(image);
     } catch (e) {
       rethrow;
     }
@@ -623,14 +613,12 @@ class ReceiptDesign extends DesignFunctions {
       /// Footer ------------------------------------------------------------------
       addFooterWidget(widgetList, null);
 
-      final image = await createImageFromWidget(
+      return await createImageAndConvert(
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: widgetList,
         ),
       );
-
-      return convertImageToByteAndCut(image);
     } catch (e) {
       rethrow;
     }
@@ -660,14 +648,12 @@ class ReceiptDesign extends DesignFunctions {
       if (i < printData.printData!.orders!.length - 1) addSeparatorWidget(widgetList);
     }
 
-    final image = await createImageFromWidget(
+    return await createImageAndConvert(
       Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: widgetList,
       ),
     );
-
-    return convertImageToByteAndCut(image);
   }
 
   Future<List<int>> testTicket() async {
@@ -725,14 +711,12 @@ class ReceiptDesign extends DesignFunctions {
       addFooterWidget(widgetList, null);
       addEmptyLinesWidget(widgetList);
 
-      final image = await createImageFromWidget(
+      return await createImageAndConvert(
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: widgetList,
         ),
       );
-
-      return convertImageToByteAndCut(image);
     } catch (e) {
       rethrow;
     }
