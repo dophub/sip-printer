@@ -5,10 +5,7 @@ import 'package:sip_models/enum.dart';
 import 'package:sip_models/request.dart';
 import 'package:sip_models/response.dart';
 import 'package:sip_printer/src/extanstion/extension_string.dart';
-import 'package:sunmi_printer_plus/column_maker.dart';
-import 'package:sunmi_printer_plus/enums.dart';
 import 'package:sunmi_printer_plus/sunmi_printer_plus.dart';
-import 'package:sunmi_printer_plus/sunmi_style.dart';
 import 'package:sip_models/ri_models.dart';
 
 import '../../../sip_printer.dart';
@@ -18,7 +15,9 @@ import '../../../sip_printer.dart';
 /// [GETIN] => Gel Al
 
 class SunmiPrinterHeader {
-  SunmiPrinterHeader();
+  final SunmiPrinterPlus sunmiPrinterPlus;
+
+  SunmiPrinterHeader({required this.sunmiPrinterPlus});
 
   Future<void> printHeaderTABLE({
     required String? tableName,
@@ -28,47 +27,51 @@ class SunmiPrinterHeader {
     orderNumber = '#$orderNumber';
     String orderType = 'RESTORAN';
 
-    await SunmiPrinter.initPrinter().then((var init) async {
-      if (init!) {
-        await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
-        await SunmiPrinter.printText(
-          '** SİPARİŞ FİŞİ **',
-          style: SunmiStyle(
-            fontSize: SunmiFontSize.MD,
-            bold: true,
-          ),
-        );
-        await SunmiPrinter.line();
+    await sunmiPrinterPlus.printText(
+      text: '** SİPARİŞ FİŞİ **',
+      style: SunmiTextStyle(
+        bold: true,
+        align: SunmiPrintAlign.CENTER,
+      ),
+    );
+    await addLine();
 
-        await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
-        if (tableName != null) {
-          await SunmiPrinter.printText(tableName,
-              style: SunmiStyle(
-                fontSize: SunmiFontSize.MD,
-                bold: true,
-              ));
-        }
+    if (tableName != null) {
+      await sunmiPrinterPlus.printText(
+        text: tableName,
+        style: SunmiTextStyle(
+          bold: true,
+          align: SunmiPrintAlign.CENTER,
+        ),
+      );
+    }
 
-        //AREA 2 -> Sipariş No ve Restoran Kısmı
-        await SunmiPrinter.printRow(cols: [
-          ColumnMaker(
-            text: orderNumberTitle,
-            width: orderNumberTitle.length + 3,
-          ),
-          ColumnMaker(width: orderNumber.length + 5, align: SunmiPrintAlign.CENTER),
-          ColumnMaker(text: orderType, width: orderType.length, align: SunmiPrintAlign.RIGHT),
-        ]);
+    //AREA 2 -> Sipariş No ve Restoran Kısmı
+    await sunmiPrinterPlus.printRow(
+      cols: [
+        SunmiColumn(
+          text: orderNumberTitle,
+          width: orderNumberTitle.length + 3,
+          style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
+        ),
+        SunmiColumn(
+          text: orderType,
+          width: orderType.length,
+          style: SunmiTextStyle(align: SunmiPrintAlign.RIGHT),
+        ),
+      ],
+    );
 
-        //OrderNumber
-        await SunmiPrinter.printText(orderNumber,
-            style: SunmiStyle(
-              fontSize: SunmiFontSize.MD,
-            ));
+    //OrderNumber
+    await sunmiPrinterPlus.printText(
+      text: orderNumber,
+      style: SunmiTextStyle(
+        align: SunmiPrintAlign.CENTER,
+      ),
+    );
 
-        //DIVIDER
-        await SunmiPrinter.line();
-      }
-    });
+    //DIVIDER
+    await addLine();
   }
 
   //********/TAKEOUT********//
@@ -79,82 +82,90 @@ class SunmiPrinterHeader {
     required CustomerAddressModel? customerAddress,
     required String? orderNote,
   }) async {
-    await SunmiPrinter.initPrinter().then((var init) async {
-      if (init!) {
-        await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
-        await SunmiPrinter.printText('** ${SipPrinter.instance.headerTitle.withoutDiacriticalMarks()} **',
-            style: SunmiStyle(
-              fontSize: SunmiFontSize.MD,
-              bold: true,
-            ));
+    await sunmiPrinterPlus.printText(
+      text: '** ${SipPrinter.instance.headerTitle.withoutDiacriticalMarks()} **',
+      style: SunmiTextStyle(
+        bold: true,
+        align: SunmiPrintAlign.CENTER,
+      ),
+    );
 
-        //DIVIDER
-        await SunmiPrinter.line();
-        await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
+    //DIVIDER
+    await addLine();
 
-        //AREA 2 -> Sipariş No ve Restoran Kısmı
-        await SunmiPrinter.printRow(cols: [
-          ColumnMaker(
-            text: 'SİPARİŞ NO:'.withoutDiacriticalMarks(),
-            width: 11,
-          ),
-          ColumnMaker(width: 09, align: SunmiPrintAlign.CENTER),
-          ColumnMaker(
-            text: 'Tarih',
-            width: 10,
-            align: SunmiPrintAlign.RIGHT,
-          ),
-        ]);
-        //OrderNumber
+    //AREA 2 -> Sipariş No ve Restoran Kısmı
+    await sunmiPrinterPlus.printRow(
+      cols: [
+        SunmiColumn(
+          text: 'SİPARİŞ NO:'.withoutDiacriticalMarks(),
+          width: 11,
+        ),
+        SunmiColumn(
+          width: 09,
+          style: SunmiTextStyle(align: SunmiPrintAlign.CENTER),
+          text: '',
+        ),
+        SunmiColumn(
+          text: 'Tarih',
+          width: 10,
+          style: SunmiTextStyle(align: SunmiPrintAlign.RIGHT),
+        ),
+      ],
+    );
+    //OrderNumber
 
-        await SunmiPrinter.printRow(cols: [
-          ColumnMaker(
-            text: '#$orderNumber',
-            width: 10,
-          ),
-          ColumnMaker(
-            text: DateFormat('dd.MM.yyyy, kk:mm').format(DateTime.now().toLocal()),
-            align: SunmiPrintAlign.RIGHT,
-            width: 20,
-          ),
-        ]);
-        //DIVIDER
-        await SunmiPrinter.line();
-        await SunmiPrinter.printText('${nameSurname.withoutDiacriticalMarks}',
-            style: SunmiStyle(
-              fontSize: SunmiFontSize.MD,
-              bold: true,
-            ));
-        if (customerAddress != null) {
-          await SunmiPrinter.printText('${(customerAddress.address ?? '').withoutDiacriticalMarks}',
-              style: SunmiStyle(
-                fontSize: SunmiFontSize.MD,
-              ));
-        }
+    await sunmiPrinterPlus.printRow(
+      cols: [
+        SunmiColumn(
+          text: '#$orderNumber',
+          width: 10,
+        ),
+        SunmiColumn(
+          text: DateFormat('dd.MM.yyyy, kk:mm').format(DateTime.now().toLocal()),
+          style: SunmiTextStyle(align: SunmiPrintAlign.RIGHT),
+          width: 20,
+        ),
+      ],
+    );
+    //DIVIDER
+    await addLine();
+    await sunmiPrinterPlus.printText(
+      text: '${nameSurname.withoutDiacriticalMarks}',
+      style: SunmiTextStyle(
+        bold: true,
+      ),
+    );
+    if (customerAddress != null) {
+      await sunmiPrinterPlus.printText(
+        text: '${(customerAddress.address ?? '').withoutDiacriticalMarks}',
+        style: SunmiTextStyle(),
+      );
+    }
 
-        //Adres tarifi boş ya da null değilse çağrılır.
-        if (customerAddress != null &&
-            customerAddress.addressRoute != null &&
-            customerAddress.addressRoute!.trim().isNotEmpty) {
-          await SunmiPrinter.printText('${customerAddress.addressRoute!.withoutDiacriticalMarks}',
-              style: SunmiStyle(
-                fontSize: SunmiFontSize.MD,
-              ));
-        }
+    //Adres tarifi boş ya da null değilse çağrılır.
+    if (customerAddress != null &&
+        customerAddress.addressRoute != null &&
+        customerAddress.addressRoute!.trim().isNotEmpty) {
+      await sunmiPrinterPlus.printText(
+        text: '${customerAddress.addressRoute!.withoutDiacriticalMarks}',
+        style: SunmiTextStyle(),
+      );
+    }
 
-        await SunmiPrinter.line();
-        if (orderNote?.isNotEmpty == true) {
-          await SunmiPrinter.printText('Müşteri Notu', style: SunmiStyle(fontSize: SunmiFontSize.MD, bold: true));
+    await addLine();
+    if (orderNote?.isNotEmpty == true) {
+      await sunmiPrinterPlus.printText(
+        text: 'Müşteri Notu',
+        style: SunmiTextStyle(bold: true),
+      );
 
-          await SunmiPrinter.printText('${orderNote!.withoutDiacriticalMarks}',
-              style: SunmiStyle(
-                fontSize: SunmiFontSize.MD,
-              ));
+      await sunmiPrinterPlus.printText(
+        text: '${orderNote!.withoutDiacriticalMarks}',
+        style: SunmiTextStyle(),
+      );
 
-          await SunmiPrinter.line();
-        }
-      }
-    });
+      await addLine();
+    }
   }
 
   //********/GETIN********//
@@ -165,139 +176,153 @@ class SunmiPrinterHeader {
     required String? callNumber,
     required String? orderNote,
   }) async {
-    await SunmiPrinter.initPrinter().then((var init) async {
-      if (init!) {
-        await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
-        await SunmiPrinter.printText('** GEL AL **',
-            style: SunmiStyle(
-              fontSize: SunmiFontSize.MD,
-              bold: true,
-            ));
+    await sunmiPrinterPlus.printText(
+      text: '** GEL AL **',
+      style: SunmiTextStyle(
+        bold: true,
+        align: SunmiPrintAlign.CENTER,
+      ),
+    );
 
-        //DIVIDER
-        await SunmiPrinter.line();
-        await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
+    //DIVIDER
+    await addLine();
 
-        //AREA 2 -> Sipariş No ve Restoran Kısmı
-        await SunmiPrinter.printRow(cols: [
-          ColumnMaker(
-            text: 'SİPARİŞ NO:'.withoutDiacriticalMarks(),
-            width: 11,
-          ),
-          ColumnMaker(width: 09, align: SunmiPrintAlign.CENTER),
-          ColumnMaker(
-            text: 'Tarih',
-            width: 10,
-            align: SunmiPrintAlign.RIGHT,
-          ),
-        ]);
-        //OrderNumber
+    //AREA 2 -> Sipariş No ve Restoran Kısmı
+    await sunmiPrinterPlus.printRow(cols: [
+      SunmiColumn(
+        text: 'SİPARİŞ NO:'.withoutDiacriticalMarks(),
+        width: 11,
+      ),
+      SunmiColumn(
+        width: 09,
+        style: SunmiTextStyle(align: SunmiPrintAlign.CENTER),
+        text: '',
+      ),
+      SunmiColumn(
+        text: 'Tarih',
+        width: 10,
+        style: SunmiTextStyle(align: SunmiPrintAlign.RIGHT),
+      ),
+    ]);
+    //OrderNumber
 
-        await SunmiPrinter.printRow(cols: [
-          ColumnMaker(
-            text: '#$orderNumber',
-            width: 10,
-          ),
-          ColumnMaker(
-            text: DateFormat('dd.MM.yyyy, kk:mm').format(DateTime.now().toLocal()),
-            align: SunmiPrintAlign.RIGHT,
-            width: 20,
-          ),
-        ]);
-        //DIVIDER
-        await SunmiPrinter.line();
-        await SunmiPrinter.printText('${nameSurname.withoutDiacriticalMarks}',
-            style: SunmiStyle(
-              fontSize: SunmiFontSize.MD,
-              bold: true,
-            ));
+    await sunmiPrinterPlus.printRow(cols: [
+      SunmiColumn(
+        text: '#$orderNumber',
+        width: 10,
+      ),
+      SunmiColumn(
+        text: DateFormat('dd.MM.yyyy, kk:mm').format(DateTime.now().toLocal()),
+        style: SunmiTextStyle(align: SunmiPrintAlign.RIGHT),
+        width: 20,
+      ),
+    ]);
+    //DIVIDER
+    await addLine();
+    await sunmiPrinterPlus.printText(
+      text: '${nameSurname.withoutDiacriticalMarks}',
+      style: SunmiTextStyle(
+        bold: true,
+        align: SunmiPrintAlign.CENTER,
+      ),
+    );
 
-        if (callNumber != null && callNumber.trim().isNotEmpty) {
-          await SunmiPrinter.printText('Telefon: ${callNumber.withoutDiacriticalMarks()}',
-              style: SunmiStyle(
-                fontSize: SunmiFontSize.MD,
-              ));
-        }
-        await SunmiPrinter.line();
-        if (orderNote?.isNotEmpty == true) {
-          await SunmiPrinter.printText('Müşteri Notu', style: SunmiStyle(fontSize: SunmiFontSize.MD, bold: true));
+    if (callNumber != null && callNumber.trim().isNotEmpty) {
+      await sunmiPrinterPlus.printText(
+        text: 'Telefon: ${callNumber.withoutDiacriticalMarks()}',
+        style: SunmiTextStyle(
+          align: SunmiPrintAlign.LEFT,
+        ),
+      );
+    }
+    await addLine();
+    if (orderNote?.isNotEmpty == true) {
+      await sunmiPrinterPlus.printText(
+        text: 'Müşteri Notu',
+        style: SunmiTextStyle(
+          bold: true,
+          align: SunmiPrintAlign.LEFT,
+        ),
+      );
 
-          await SunmiPrinter.printText('${orderNote!.withoutDiacriticalMarks}',
-              style: SunmiStyle(
-                fontSize: SunmiFontSize.MD,
-              ));
-          await SunmiPrinter.line();
-        }
-      }
-    });
+      await sunmiPrinterPlus.printText(
+        text: '${orderNote!.withoutDiacriticalMarks}',
+        style: SunmiTextStyle(),
+      );
+      await addLine();
+    }
   }
 
   Future<void> printTestReceipt() async {
-    await SunmiPrinter.initPrinter().then((var init) async {
-      if (init!) {
-        await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
-        await SunmiPrinter.printText('** TEST FİŞİ **',
-            style: SunmiStyle(
-              fontSize: SunmiFontSize.MD,
-              bold: true,
-            ));
+    await sunmiPrinterPlus.printText(
+      text: '** TEST FİŞİ **',
+      style: SunmiTextStyle(
+        bold: true,
+        align: SunmiPrintAlign.CENTER,
+      ),
+    );
 
-        //DIVIDER
-        await SunmiPrinter.line();
-        await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
+    //DIVIDER
+    await addLine();
 
-        //AREA 2 -> Sipariş No ve Restoran Kısmı
-        await SunmiPrinter.printRow(cols: [
-          ColumnMaker(
-            text: 'TEST NO:'.withoutDiacriticalMarks(),
-            width: 1,
-          ),
-          ColumnMaker(width: 09, align: SunmiPrintAlign.CENTER),
-          ColumnMaker(
-            text: 'Tarih',
-            width: 10,
-            align: SunmiPrintAlign.RIGHT,
-          ),
-        ]);
-        //OrderNumber
+    //AREA 2 -> Sipariş No ve Restoran Kısmı
+    await sunmiPrinterPlus.printRow(
+      cols: [
+        SunmiColumn(
+          text: 'TEST NO:'.withoutDiacriticalMarks(),
+          width: 1,
+        ),
+        SunmiColumn(
+          text: 'Tarih',
+          width: 1,
+          style: SunmiTextStyle(align: SunmiPrintAlign.RIGHT),
+        ),
+      ],
+    );
+    //OrderNumber
 
-        await SunmiPrinter.printRow(cols: [
-          ColumnMaker(
-            text: '0001',
-            width: 10,
-          ),
-          ColumnMaker(
-            text: DateFormat('dd.MM.yyyy, kk:mm').format(DateTime.now().toLocal()),
-            align: SunmiPrintAlign.RIGHT,
-            width: 20,
-          ),
-        ]);
-        //DIVIDER
-        await SunmiPrinter.line();
-        await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
-        await SunmiPrinter.printQRCode('https://sorgula.turkcellesirket.com/earsiv/7710617226/SAS2025000035290/1,00', size: 4);
-        await SunmiPrinter.printText(
-          'E-Belgeye erişmek için'.withoutDiacriticalMarks(),
-          style: SunmiStyle(
-            fontSize: SunmiFontSize.MD,
-            bold: false,
-            align: SunmiPrintAlign.CENTER,
-          ),
-        );
-        await SunmiPrinter.printText(
-          'yukarıdaki QR kodu okutunuz.'.withoutDiacriticalMarks(),
-          style: SunmiStyle(
-            fontSize: SunmiFontSize.MD,
-            bold: false,
-            align: SunmiPrintAlign.CENTER,
-          ),
-        );
+    await sunmiPrinterPlus.printRow(cols: [
+      SunmiColumn(
+        text: '0001',
+        width: 10,
+      ),
+      SunmiColumn(
+        text: DateFormat('dd.MM.yyyy, kk:mm').format(DateTime.now().toLocal()),
+        style: SunmiTextStyle(align: SunmiPrintAlign.RIGHT),
+        width: 20,
+      ),
+    ]);
+    //DIVIDER
+    await addLine();
+    await sunmiPrinterPlus.printQrcode(
+      text: 'https://sorgula.turkcellesirket.com/earsiv/7710617226/SAS2025000035290/1,00',
+      style: SunmiQrcodeStyle(
+        qrcodeSize: 4,
+        align: SunmiPrintAlign.CENTER,
+      ),
+    );
+    await sunmiPrinterPlus.printText(
+      text: 'E-Belgeye erişmek için'.withoutDiacriticalMarks(),
+      style: SunmiTextStyle(
+        bold: false,
+        align: SunmiPrintAlign.CENTER,
+      ),
+    );
+    await sunmiPrinterPlus.printText(
+      text: 'yukarıdaki QR kodu okutunuz.'.withoutDiacriticalMarks(),
+      style: SunmiTextStyle(
+        bold: false,
+        align: SunmiPrintAlign.CENTER,
+      ),
+    );
 
-        await SunmiPrinter.line();
-        await SunmiPrinter.lineWrap(3);
-        await SunmiPrinter.exitTransactionPrint(true);
-      }
-    });
+    await addLine(6);
+  }
+
+  Future addLine([int time = 1]) async {
+    for (var i = 0; i < time; i++) {
+      await sunmiPrinterPlus.printText(text: ' ');
+    }
   }
 
   Future<void> printForBackgroundProcess({
@@ -308,195 +333,208 @@ class SunmiPrinterHeader {
     List<PrinterLineAndStyleModel>? footers,
     String? invoiceLink,
   }) async {
-    await SunmiPrinter.initPrinter().then((init) async {
-      if (init == false) return;
-      await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
-
-      /// Dealer Name
-      final dealerName = SipPrinter.instance.headerTitle.withoutDiacriticalMarks();
-      final dealerNameList = orderDetailFitter(dealerName, 31);
-      for (String dealerStr in dealerNameList) {
-        await SunmiPrinter.printText(
-          dealerStr,
-          style: SunmiStyle(
-            fontSize: SunmiFontSize.LG,
-            bold: true,
-            align: SunmiPrintAlign.CENTER,
-          ),
-        );
-      }
-
-      /// Dealer addres
-      final address = SipPrinter.instance.footerTitle.withoutDiacriticalMarks();
-      final addressList = orderDetailFitter(address, 31);
-      for (String addressStr in addressList) {
-        await SunmiPrinter.printText(
-          addressStr,
-          style: SunmiStyle(
-            fontSize: SunmiFontSize.MD,
-            bold: true,
-            align: SunmiPrintAlign.CENTER,
-          ),
-        );
-      }
-      await SunmiPrinter.line();
-
-      /// Header
-      if (headers != null) {
-        for (var element in headers) {
-          await SunmiPrinter.printText(element.text!,
-              style: SunmiStyle(
-                fontSize: element.style?.enumFromString<SunmiFontSize>(SunmiFontSize.values),
-                bold: true,
-                align: SunmiPrintAlign.CENTER,
-              ));
-        }
-        if (headers.isNotEmpty) await SunmiPrinter.line();
-      }
-
-      /// Receipt type
-      await SunmiPrinter.printText(
-          isPayment ? "KASA FİŞİ".withoutDiacriticalMarks() : "MASA ADİSYONU".withoutDiacriticalMarks(),
-          style: SunmiStyle(
-            fontSize: SunmiFontSize.MD,
-            bold: true,
-          ));
-
-      /// Delivery type
-      if (paymentModelId == PaymentModelID.PRE.name) {
-        await SunmiPrinter.printText(
-          (printData.serviceDeliveryType == TableServiceType.SS.name ? "Servis Tipi: Selfsevis" : "Servis Tipi: Masa")
-              .withoutDiacriticalMarks(),
-          style: SunmiStyle(
-            fontSize: SunmiFontSize.MD,
-            bold: true,
-          ),
-        );
-      }
-      await SunmiPrinter.line();
-
-      /// Payment Status
-      if (isPayment) {
-        await SunmiPrinter.printText("Ödendi / ${printData.paymentType}".withoutDiacriticalMarks(),
-            style: SunmiStyle(
-              fontSize: SunmiFontSize.MD,
-              bold: true,
-            ));
-        await SunmiPrinter.line();
-      }
-
-      /// Orders
-      for (var order in printData.orders!) {
-        await SunmiPrinter.printText(
-          "${"Sipariş: ${order.id!.toString()}".withoutDiacriticalMarks()} - ${order.nickName.maskNullableSurname()}",
-          style: SunmiStyle(
-            fontSize: SunmiFontSize.MD,
-            bold: true,
-          ),
-        );
-        await SunmiPrinter.line();
-        await _createColumnFromOrderDetail(order);
-        await SunmiPrinter.line();
-        if (order.orderNote?.isNotEmpty == true) {
-          await SunmiPrinter.printText('Müşteri Notu', style: SunmiStyle(fontSize: SunmiFontSize.MD, bold: true));
-          await SunmiPrinter.printText('${order.orderNote!.withoutDiacriticalMarks}',
-              style: SunmiStyle(
-                fontSize: SunmiFontSize.MD,
-              ));
-          await SunmiPrinter.line();
-        }
-      }
-
-      /// Tip Amount
-      if (printData.totalTipAmount != null && printData.totalTipAmount != 0) {
-        await SunmiPrinter.printRow(cols: [
-          ColumnMaker(
-            text: 'Bahşiş:'.withoutDiacriticalMarks(),
-            width: 4,
-            align: SunmiPrintAlign.LEFT,
-          ),
-          ColumnMaker(
-            text: '${printData.totalTipAmount} TL'.withoutDiacriticalMarks(),
-            width: 19,
-            align: SunmiPrintAlign.RIGHT,
-          ),
-        ]);
-      }
-
-      /// Table Service
-      if (printData.tableServiceAmount != null && printData.tableServiceAmount != 0) {
-        await SunmiPrinter.printRow(cols: [
-          ColumnMaker(
-            text: 'Masaya Servis:'.withoutDiacriticalMarks(),
-            width: 4,
-            align: SunmiPrintAlign.LEFT,
-          ),
-          ColumnMaker(
-            text: '${printData.tableServiceAmount} TL'.withoutDiacriticalMarks(),
-            width: 19,
-            align: SunmiPrintAlign.RIGHT,
-          ),
-        ]);
-      }
-
-      /// Date
-      await SunmiPrinter.printText(
-        'TARİH: ${DateFormat('dd.MM.yyyy HH:mm').format(printData.orders?.firstOrNull?.recordDate ?? DateTime.now()).withoutDiacriticalMarks()}',
-        style: SunmiStyle(
-          fontSize: SunmiFontSize.MD,
+    /// Dealer Name
+    final dealerName = SipPrinter.instance.headerTitle.withoutDiacriticalMarks();
+    final dealerNameList = orderDetailFitter(dealerName, 31);
+    for (String dealerStr in dealerNameList) {
+      await sunmiPrinterPlus.printText(
+        text: dealerStr,
+        style: SunmiTextStyle(
+          fontSize: 32,
           bold: true,
+          align: SunmiPrintAlign.CENTER,
         ),
       );
+    }
 
-      /// Total Amount
-      await SunmiPrinter.printText(
-        'TOPLAM TUTAR: ${printData.serviceTotalAmount!.toStringAsFixed(2)} TL',
-        style: SunmiStyle(
-          fontSize: SunmiFontSize.MD,
+    /// Dealer addres
+    final address = SipPrinter.instance.footerTitle.withoutDiacriticalMarks();
+    final addressList = orderDetailFitter(address, 31);
+    for (String addressStr in addressList) {
+      await sunmiPrinterPlus.printText(
+        text: addressStr,
+        style: SunmiTextStyle(
           bold: true,
+          align: SunmiPrintAlign.CENTER,
         ),
       );
+    }
+    await addLine();
 
-      /// invoice QR
-      if (invoiceLink != null) {
-        await SunmiPrinter.line();
-        await SunmiPrinter.lineWrap(1);
-        await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
-        await SunmiPrinter.printQRCode(invoiceLink, size: 4);
-        await SunmiPrinter.printText(
-          'E-Belgeye erişmek için'.withoutDiacriticalMarks(),
-          style: SunmiStyle(
-            fontSize: SunmiFontSize.MD,
-            bold: false,
-            align: SunmiPrintAlign.CENTER,
-          ),
-        );
-        await SunmiPrinter.printText(
-          'yukarıdaki QR kodu okutunuz.'.withoutDiacriticalMarks(),
-          style: SunmiStyle(
-            fontSize: SunmiFontSize.MD,
-            bold: false,
+    /// Header
+    if (headers != null) {
+      for (var element in headers) {
+        await sunmiPrinterPlus.printText(
+          text: element.text!,
+          style: SunmiTextStyle(
+            fontSize: getSizeFromFontSize(element.style),
+            bold: true,
             align: SunmiPrintAlign.CENTER,
           ),
         );
       }
+      if (headers.isNotEmpty) await addLine();
+    }
 
-      /// Footer
-      if (footers?.isNotEmpty == true) await SunmiPrinter.line();
-      if (footers != null) {
-        for (var element in footers) {
-          await SunmiPrinter.printText(element.text!,
-              style: SunmiStyle(
-                fontSize: element.style?.enumFromString<SunmiFontSize>(SunmiFontSize.values),
-                bold: true,
-                align: SunmiPrintAlign.CENTER,
-              ));
-        }
+    /// Receipt type
+    await sunmiPrinterPlus.printText(
+      text: isPayment ? "KASA FİŞİ".withoutDiacriticalMarks() : "MASA ADİSYONU".withoutDiacriticalMarks(),
+      style: SunmiTextStyle(
+        bold: true,
+        align: SunmiPrintAlign.CENTER,
+      ),
+    );
+
+    /// Delivery type
+    if (paymentModelId == PaymentModelID.PRE.name) {
+      await sunmiPrinterPlus.printText(
+        text:
+            (printData.serviceDeliveryType == TableServiceType.SS.name ? "Servis Tipi: Selfsevis" : "Servis Tipi: Masa")
+                .withoutDiacriticalMarks(),
+        style: SunmiTextStyle(
+          bold: true,
+          align: SunmiPrintAlign.CENTER,
+        ),
+      );
+    }
+    await addLine();
+
+    /// Payment Status
+    if (isPayment) {
+      await sunmiPrinterPlus.printText(
+        text: "Ödendi / ${printData.paymentType}".withoutDiacriticalMarks(),
+        style: SunmiTextStyle(
+          bold: true,
+          align: SunmiPrintAlign.CENTER,
+        ),
+      );
+      await addLine();
+    }
+
+    /// Orders
+    for (var order in printData.orders!) {
+      await sunmiPrinterPlus.printText(
+        text:
+            "${"Sipariş: ${order.id!.toString()}".withoutDiacriticalMarks()} - ${order.nickName.maskNullableSurname()}",
+        style: SunmiTextStyle(
+          bold: true,
+          align: SunmiPrintAlign.CENTER,
+        ),
+      );
+      await addLine();
+      await _createColumnFromOrderDetail(order);
+      await addLine();
+      if (order.orderNote?.isNotEmpty == true) {
+        await sunmiPrinterPlus.printText(
+          text: 'Sipariş Notu',
+          style: SunmiTextStyle(
+            bold: true,
+            align: SunmiPrintAlign.CENTER,
+          ),
+        );
+        await sunmiPrinterPlus.printText(
+          text: '${order.orderNote!.withoutDiacriticalMarks}',
+          style: SunmiTextStyle(
+            align: SunmiPrintAlign.CENTER,
+          ),
+        );
+        await addLine();
       }
+    }
 
-      await SunmiPrinter.lineWrap(4);
-      await SunmiPrinter.exitTransactionPrint(true);
-    });
+    /// Tip Amount
+    if (printData.totalTipAmount != null && printData.totalTipAmount != 0) {
+      await sunmiPrinterPlus.printRow(cols: [
+        SunmiColumn(
+          text: 'Bahşiş:'.withoutDiacriticalMarks(),
+          width: 4,
+          style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
+        ),
+        SunmiColumn(
+          text: '${printData.totalTipAmount} TL'.withoutDiacriticalMarks(),
+          width: 19,
+          style: SunmiTextStyle(align: SunmiPrintAlign.RIGHT),
+        ),
+      ]);
+    }
+
+    /// Table Service
+    if (printData.tableServiceAmount != null && printData.tableServiceAmount != 0) {
+      await sunmiPrinterPlus.printRow(cols: [
+        SunmiColumn(
+          text: 'Masaya Servis:'.withoutDiacriticalMarks(),
+          width: 4,
+          style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
+        ),
+        SunmiColumn(
+          text: '${printData.tableServiceAmount} TL'.withoutDiacriticalMarks(),
+          width: 19,
+          style: SunmiTextStyle(align: SunmiPrintAlign.RIGHT),
+        ),
+      ]);
+    }
+
+    /// Date
+    await sunmiPrinterPlus.printText(
+      text:
+          'TARİH: ${DateFormat('dd.MM.yyyy HH:mm').format(printData.orders?.firstOrNull?.recordDate ?? DateTime.now()).withoutDiacriticalMarks()}',
+      style: SunmiTextStyle(
+        bold: true,
+        align: SunmiPrintAlign.CENTER,
+      ),
+    );
+
+    /// Total Amount
+    await sunmiPrinterPlus.printText(
+      text: 'TOPLAM TUTAR: ${printData.serviceTotalAmount!.toStringAsFixed(2)} TL',
+      style: SunmiTextStyle(
+        bold: true,
+        align: SunmiPrintAlign.CENTER,
+      ),
+    );
+
+    /// invoice QR
+    if (invoiceLink != null) {
+      await addLine(2);
+      await sunmiPrinterPlus.printQrcode(
+        text: invoiceLink,
+        style: SunmiQrcodeStyle(
+          qrcodeSize: 4,
+          align: SunmiPrintAlign.CENTER,
+        ),
+      );
+      await sunmiPrinterPlus.printText(
+        text: 'E-Belgeye erişmek için'.withoutDiacriticalMarks(),
+        style: SunmiTextStyle(
+          bold: false,
+          align: SunmiPrintAlign.CENTER,
+        ),
+      );
+      await sunmiPrinterPlus.printText(
+        text: 'yukarıdaki QR kodu okutunuz.'.withoutDiacriticalMarks(),
+        style: SunmiTextStyle(
+          bold: false,
+          align: SunmiPrintAlign.CENTER,
+        ),
+      );
+    }
+
+    /// Footer
+    if (footers?.isNotEmpty == true) await addLine();
+    if (footers != null) {
+      for (var element in footers) {
+        await sunmiPrinterPlus.printText(
+          text: element.text!,
+          style: SunmiTextStyle(
+            fontSize: getSizeFromFontSize(element.style),
+            bold: true,
+            align: SunmiPrintAlign.CENTER,
+          ),
+        );
+      }
+    }
+
+    await addLine(4);
   }
 
   Future<void> _createColumnFromOrderDetail(PrinterQuequeResponseOrderModel orderDetail) async {
@@ -505,57 +543,57 @@ class SunmiPrinterHeader {
       for (var element in itemsFitted) {
         if (element == itemsFitted.first) {
           if (orderDetail.items![i].status!.statusCode == OrderItemStatusId.CANCEL.name) {
-            await SunmiPrinter.printRow(cols: [
-              ColumnMaker(
+            await sunmiPrinterPlus.printRow(cols: [
+              SunmiColumn(
                 text: 'Iptal Edildi'.withoutDiacriticalMarks(),
                 width: 4,
-                align: SunmiPrintAlign.LEFT,
+                style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
               ),
-              ColumnMaker(
+              SunmiColumn(
                 text: '',
                 width: 19,
-                align: SunmiPrintAlign.CENTER,
+                style: SunmiTextStyle(align: SunmiPrintAlign.CENTER),
               ),
-              ColumnMaker(
+              SunmiColumn(
                 text: '',
                 width: 8,
-                align: SunmiPrintAlign.RIGHT,
+                style: SunmiTextStyle(align: SunmiPrintAlign.RIGHT),
               ),
             ]);
           }
-          await SunmiPrinter.printRow(cols: [
-            ColumnMaker(
+          await sunmiPrinterPlus.printRow(cols: [
+            SunmiColumn(
               text: "${orderDetail.items![i].count.toString()}x".withoutDiacriticalMarks(),
               width: 4,
-              align: SunmiPrintAlign.LEFT,
+              style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
             ),
-            ColumnMaker(
+            SunmiColumn(
               text: element.withoutDiacriticalMarks(),
               width: 19,
-              align: SunmiPrintAlign.LEFT,
+              style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
             ),
-            ColumnMaker(
+            SunmiColumn(
               text: "${orderDetail.items![i].totalPrice!.toStringAsFixed(2)}TL".withoutDiacriticalMarks(),
               width: 8,
-              align: SunmiPrintAlign.RIGHT,
+              style: SunmiTextStyle(align: SunmiPrintAlign.RIGHT),
             ),
           ]);
         } else {
-          await SunmiPrinter.printRow(cols: [
-            ColumnMaker(
+          await sunmiPrinterPlus.printRow(cols: [
+            SunmiColumn(
               text: "".withoutDiacriticalMarks(),
               width: 4,
-              align: SunmiPrintAlign.LEFT,
+              style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
             ),
-            ColumnMaker(
+            SunmiColumn(
               text: element.withoutDiacriticalMarks(),
               width: 19,
-              align: SunmiPrintAlign.LEFT,
+              style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
             ),
-            ColumnMaker(
+            SunmiColumn(
               text: "".withoutDiacriticalMarks(),
               width: 9,
-              align: SunmiPrintAlign.RIGHT,
+              style: SunmiTextStyle(align: SunmiPrintAlign.RIGHT),
             ),
           ]);
         }
@@ -563,81 +601,81 @@ class SunmiPrinterHeader {
         if (orderDetail.items![i].options != null) {
           if (orderDetail.items![i].itemTypeId == ItemType.PRODUCT.name) {
             for (OrderOption option in orderDetail.items![i].options!) {
-              await SunmiPrinter.printRow(cols: [
-                ColumnMaker(
+              await sunmiPrinterPlus.printRow(cols: [
+                SunmiColumn(
                   text: '',
                   width: 4,
                 ),
-                ColumnMaker(
+                SunmiColumn(
                   text: stringRowCreater('${option.title!}:'.withoutDiacriticalMarks(), 27),
                   width: 27,
-                  align: SunmiPrintAlign.LEFT,
+                  style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
                 ),
               ]);
               for (OrderOptionItem optionItem in option.items!) {
-                await SunmiPrinter.printRow(cols: [
-                  ColumnMaker(
+                await sunmiPrinterPlus.printRow(cols: [
+                  SunmiColumn(
                     text: '',
                     width: 4,
                   ),
-                  ColumnMaker(
+                  SunmiColumn(
                     text: stringRowCreater(optionItem.title!..withoutDiacriticalMarks, 27),
                     width: 27,
-                    align: SunmiPrintAlign.LEFT,
+                    style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
                   ),
                 ]);
               }
             }
           } else if (orderDetail.items![i].itemTypeId == ItemType.PROMOTION_MENU.name) {
             for (OrderOption option in orderDetail.items![i].options!) {
-              await SunmiPrinter.printRow(cols: [
-                ColumnMaker(
+              await sunmiPrinterPlus.printRow(cols: [
+                SunmiColumn(
                   text: '',
                   width: 4,
-                  align: SunmiPrintAlign.LEFT,
+                  style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
                 ),
-                ColumnMaker(
+                SunmiColumn(
                   text: stringRowCreater('${option.sectionTitle!}:'.withoutDiacriticalMarks(), 27),
                   width: 27,
-                  align: SunmiPrintAlign.LEFT,
+                  style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
                 ),
               ]);
-              await SunmiPrinter.printRow(cols: [
-                ColumnMaker(
+              await sunmiPrinterPlus.printRow(cols: [
+                SunmiColumn(
                   text: '',
                   width: 4,
-                  align: SunmiPrintAlign.LEFT,
+                  style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
                 ),
-                ColumnMaker(
+                SunmiColumn(
                   text: stringRowCreater(option.sectionItem!.productName!.withoutDiacriticalMarks(), 27),
                   width: 27,
-                  align: SunmiPrintAlign.LEFT,
+                  style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
                 ),
               ]);
               for (var sectionOption in option.sectionItem!.options!) {
-                await SunmiPrinter.printRow(cols: [
-                  ColumnMaker(
+                await sunmiPrinterPlus.printRow(cols: [
+                  SunmiColumn(
                     text: '',
                     width: 4,
-                    align: SunmiPrintAlign.LEFT,
+                    style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
                   ),
-                  ColumnMaker(
+                  SunmiColumn(
                     text: stringRowCreater('${sectionOption.title}:'.withoutDiacriticalMarks(), 27),
                     width: 27,
-                    align: SunmiPrintAlign.LEFT,
+                    style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
                   ),
                 ]);
                 for (var sectionOptionItem in sectionOption.items!) {
-                  await SunmiPrinter.printRow(cols: [
-                    ColumnMaker(
+                  await sunmiPrinterPlus.printRow(cols: [
+                    SunmiColumn(
                       text: '',
                       width: 4,
-                      align: SunmiPrintAlign.LEFT,
+                      style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
                     ),
-                    ColumnMaker(
+                    SunmiColumn(
                       text: stringRowCreater(sectionOptionItem.title!.withoutDiacriticalMarks(), 31),
                       width: 27,
-                      align: SunmiPrintAlign.LEFT,
+                      style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
                     ),
                   ]);
                 }
@@ -649,21 +687,21 @@ class SunmiPrinterHeader {
           List<String> orderNoteStrings = orderDetailFitter(orderDetail.items![i].itemNote!, 20);
           orderNoteStrings.insert(0, "Müşteri Notu: ");
           for (var orderNote in orderNoteStrings) {
-            await SunmiPrinter.printRow(cols: [
-              ColumnMaker(
+            await sunmiPrinterPlus.printRow(cols: [
+              SunmiColumn(
                 text: "".withoutDiacriticalMarks(),
                 width: 4,
-                align: SunmiPrintAlign.LEFT,
+                style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
               ),
-              ColumnMaker(
+              SunmiColumn(
                 text: orderNote.withoutDiacriticalMarks(),
                 width: 20,
-                align: SunmiPrintAlign.LEFT,
+                style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
               ),
-              ColumnMaker(
+              SunmiColumn(
                 text: "".withoutDiacriticalMarks(),
                 width: 7,
-                align: SunmiPrintAlign.RIGHT,
+                style: SunmiTextStyle(align: SunmiPrintAlign.RIGHT),
               ),
             ]);
           }
@@ -710,5 +748,22 @@ class SunmiPrinterHeader {
       }
     }
     return tempList;
+  }
+
+  int getSizeFromFontSize(String? size) {
+    switch (size) {
+      case 'XS':
+        return 14;
+      case 'SM':
+        return 20;
+      case 'MD':
+        return 24;
+      case 'LG':
+        return 32;
+      case "XL":
+        return 48;
+      default:
+        return 24;
+    }
   }
 }

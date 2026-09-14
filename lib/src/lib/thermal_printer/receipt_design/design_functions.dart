@@ -1182,7 +1182,7 @@ abstract class DesignFunctions {
     }
   }
 
-  Future<void> _loadImage(ImageProvider provider) {
+  Future<void> _loadImage(ImageProvider provider) async {
     final completer = Completer<void>();
 
     final stream = provider.resolve(
@@ -1210,7 +1210,11 @@ abstract class DesignFunctions {
 
     stream.addListener(listener);
 
-    return completer.future;
+    try {
+      await completer.future.timeout(const Duration(seconds: 3));
+    } finally {
+      stream.removeListener(listener);
+    }
   }
 
   addRowWidget(String col1, String col2, {int flex1 = 5, int flex2 = 6}) => Row(
@@ -1244,10 +1248,50 @@ abstract class DesignFunctions {
         ],
       );
 
-  Future<img.Image> createImageFromWidget(Widget widget) async {
+  Future<List<int>> createImageAndConvert(
+    Widget widget,
+  ) async {
+    final total = Stopwatch()..start();
+
+    debugPrint('PRINT: START');
+
+    final imageWatch = Stopwatch()..start();
+
+    final image = await _createImageFromWidget(widget);
+
+    debugPrint(
+      'PRINT: createImageFromWidget = '
+      '${imageWatch.elapsedMilliseconds} ms',
+    );
+
+    final convertWatch = Stopwatch()..start();
+
+    final bytes = _convertImageToByteAndCut(image);
+
+    debugPrint(
+      'PRINT: convertImageToByteAndCut = '
+      '${convertWatch.elapsedMilliseconds} ms',
+    );
+
+    debugPrint(
+      'PRINT: TOTAL = '
+      '${total.elapsedMilliseconds} ms | '
+      'bytes=${bytes.length}',
+    );
+
+    return bytes;
+  }
+
+  Future<img.Image> _createImageFromWidget(Widget widget) async {
+    final total = Stopwatch()..start();
+
     final repaintBoundary = RenderRepaintBoundary();
     final pipelineOwner = PipelineOwner();
-    final buildOwner = BuildOwner(focusManager: FocusManager());
+    final buildOwner = BuildOwner(
+      focusManager: FocusManager(),
+    );
+
+    print('PRINT W: create render objects: ${total.elapsedMilliseconds} ms');
 
     final renderView = RenderView(
       view: WidgetsBinding.instance.platformDispatcher.views.first,
@@ -1256,8 +1300,14 @@ abstract class DesignFunctions {
         child: repaintBoundary,
       ),
       configuration: const ViewConfiguration(
-        logicalConstraints: BoxConstraints(maxWidth: 576, minWidth: 576),
-        physicalConstraints: BoxConstraints(maxWidth: 576, minWidth: 576),
+        logicalConstraints: BoxConstraints(
+          maxWidth: 576,
+          minWidth: 576,
+        ),
+        physicalConstraints: BoxConstraints(
+          maxWidth: 576,
+          minWidth: 576,
+        ),
         devicePixelRatio: 3.0,
       ),
     );
@@ -1278,19 +1328,43 @@ abstract class DesignFunctions {
     buildOwner.buildScope(rootElement);
     buildOwner.finalizeTree();
 
+    print('PRINT W: build = ${total.elapsedMilliseconds} ms');
+
     pipelineOwner.flushLayout();
+
+    print('PRINT W: layout = ${total.elapsedMilliseconds} ms');
+
     pipelineOwner.flushCompositingBits();
     pipelineOwner.flushPaint();
 
+    print('PRINT W: paint = ${total.elapsedMilliseconds} ms');
+
     final image = await repaintBoundary.toImage();
+
+    print(
+      'PRINT W: toImage = ${total.elapsedMilliseconds} ms '
+      '${image.width}x${image.height}',
+    );
+
     final byteData = await image.toByteData(format: ImageByteFormat.png);
+
+    print(
+      'PRINT W: PNG encode = ${total.elapsedMilliseconds} ms '
+      '${byteData?.lengthInBytes} bytes',
+    );
 
     final bytes = byteData!.buffer.asUint8List();
 
-    return img.decodeImage(bytes)!;
+    final result = img.decodeImage(bytes)!;
+
+    print('PRINT W: PNG decode = ${total.elapsedMilliseconds} ms');
+
+    print('PRINT W: TOTAL IMAGE = ${total.elapsedMilliseconds} ms');
+
+    return result;
   }
 
-  List<int> convertImageToByteAndCut(img.Image image) {
+  List<int> _convertImageToByteAndCut(img.Image image) {
     List<int> byte = [];
     byte += generator.image(image);
     byte += generator.cut();
