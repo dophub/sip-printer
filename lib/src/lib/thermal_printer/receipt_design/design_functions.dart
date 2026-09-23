@@ -1110,8 +1110,6 @@ abstract class DesignFunctions {
     try {
       final String assetsPath;
       switch (is3PartOrder) {
-        case null:
-          return;
         case ThirdPartClientPointId.MIGROSYEMEK:
           assetsPath = 'packages/sip_printer/assets/logo/migrosyemek_logo.jpg';
           break;
@@ -1124,6 +1122,8 @@ abstract class DesignFunctions {
         case ThirdPartClientPointId.YEMEKSEPETI:
           assetsPath = 'packages/sip_printer/assets/logo/yemeksepeti_logo.jpg';
           break;
+        default:
+          return;
       }
 
       final ByteData data = await rootBundle.load(assetsPath);
