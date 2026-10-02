@@ -7,11 +7,6 @@ import 'package:sip_printer/src/extanstion/general_extenstion.dart';
 import 'design_functions.dart';
 import 'package:sip_models/ri_models.dart';
 
-/*"order_status": {
-"order_status_code": "IN_CANCEL",
-"order_status_name": "Ä°ptal",
-"order_status_group_id": "CANCEL"
-},*/
 class ReceiptDesign extends DesignFunctions {
   ReceiptDesign(super.generator, super._paperSize);
 
