@@ -145,7 +145,6 @@ abstract class DesignFunctions {
     }
 
     /// table no ------------------------------------------------------------------
-
     if (printTableNo) {
       widgetList.add(
         addRowWidget('Masa: ', printData.tableInfo?.tableName ?? '-'),
@@ -360,12 +359,13 @@ abstract class DesignFunctions {
     bool printCustomerAddress = false,
   }) {
     if (order.orderStatus?.orderStatusGroupId == OrderStatusGroup.CANCEL.name) {
+      addSeparatorWidget(widgetList);
       addTextWidget(widgetList, 'Iptal Edildi', fontWeight: FontWeight.bold, fontSize: 50);
-      addEmptyLinesWidget(widgetList);
+      addSeparatorWidget(widgetList);
     }
 
     /// payment type ------------------------------------------------------------------
-    if (printPayment) {
+    if (printPayment && order.paymentInfo != null) {
       widgetList.add(
         addRowWidget('Ödeme Tipi: ', "${order.paymentInfo?.name}"),
       );
@@ -710,6 +710,11 @@ abstract class DesignFunctions {
           }
         }
       }
+
+/*      /// item payment type -----------------------------------------------
+      if (item.paymentTypeId != null) {
+        _row('Ödeme Tipi:', item.paymentTypeId, fontWeight: FontWeight.w700);
+      }*/
 
       /// item Note -----------------------------------------------
       if (item.itemNote?.isNotEmpty == true) {
@@ -1163,12 +1168,12 @@ abstract class DesignFunctions {
         case ThirdPartClientPointId.YEMEKSEPETI:
           assetsPath = 'assets/logo/yemeksepeti_logo.jpg';
           break;
-        case null:
-          break;
+        default:
+          return;
       }
 
       final provider = ExactAssetImage(
-        assetsPath!,
+        assetsPath,
         package: 'sip_printer',
       );
 
