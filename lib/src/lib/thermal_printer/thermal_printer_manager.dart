@@ -94,7 +94,7 @@ class ThermalPrinterManager {
   ) async {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
-      return await ReceiptDesign(Generator(type, _profile), type).printKitchenOrderByWidget(printModel);
+      return await ReceiptDesign(Generator(type, _profile), type).createReceiptForKitchenByWidget(printModel);
     } catch (e) {
       rethrow;
     }

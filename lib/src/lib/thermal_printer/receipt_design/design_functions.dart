@@ -359,6 +359,11 @@ abstract class DesignFunctions {
     bool printCustomerPhoneNo = false,
     bool printCustomerAddress = false,
   }) {
+    if (order.orderStatus?.orderStatusGroupId == OrderStatusGroup.CANCEL.name) {
+      addTextWidget(widgetList, 'Iptal Edildi', fontWeight: FontWeight.bold, fontSize: 50);
+      addEmptyLinesWidget(widgetList);
+    }
+
     /// payment type ------------------------------------------------------------------
     if (printPayment) {
       widgetList.add(
@@ -568,6 +573,7 @@ abstract class DesignFunctions {
   Widget createColumnFromOrderDetailWidget(
     List<PrinterQueueResponseOrderOrderItemModel> items, {
     bool isPriceVisible = true,
+    String? orderStatusGroupId,
   }) {
     const fontFamily = 'Poppins';
 
@@ -637,10 +643,10 @@ abstract class DesignFunctions {
       var item = items[i];
 
       final countStr = '${item.count}x';
-      // String emptyStr = ' ' * countStr.length;
 
       /// ITEM TITLE
-      if (item.status!.statusCode == OrderItemStatusId.CANCEL.name) {
+      if (item.status!.statusCode == OrderItemStatusId.CANCEL.name ||
+          orderStatusGroupId == OrderStatusGroup.CANCEL.name) {
         addTextWidget(
           children,
           'İptal Edildi',
