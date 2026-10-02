@@ -7,6 +7,11 @@ import 'package:sip_printer/src/extanstion/general_extenstion.dart';
 import 'design_functions.dart';
 import 'package:sip_models/ri_models.dart';
 
+/*"order_status": {
+"order_status_code": "IN_CANCEL",
+"order_status_name": "Ä°ptal",
+"order_status_group_id": "CANCEL"
+},*/
 class ReceiptDesign extends DesignFunctions {
   ReceiptDesign(super.generator, super._paperSize);
 
@@ -19,6 +24,8 @@ class ReceiptDesign extends DesignFunctions {
       /// MarketPlace logo ------------------------------------------------------------------
       await add3PartLogo(byte, order.clientPointId);
       addEmptyLines(byte);
+
+      order.orderStatus?.orderStatusCode == TakeOutOrderStatus.OUT_CANCEL.name;
 
       /// title ------------------------------------------------------------------
       addReceiptTitle(byte, 'PAKET');
@@ -624,7 +631,7 @@ class ReceiptDesign extends DesignFunctions {
     }
   }
 
-  Future<List<int>> printKitchenOrderByWidget(PrinterQueueResponseModel printData) async {
+  Future<List<int>> createReceiptForKitchenByWidget(PrinterQueueResponseModel printData) async {
     final List<Widget> widgetList = [];
 
     /// slip title ------------------------------------------------------------------
@@ -643,7 +650,11 @@ class ReceiptDesign extends DesignFunctions {
       addSeparatorWidget(widgetList);
 
       /// order item ------------------------------------------------------------------
-      widgetList.add(createColumnFromOrderDetailWidget(order.items!, isPriceVisible: false));
+      widgetList.add(createColumnFromOrderDetailWidget(
+        order.items!,
+        isPriceVisible: false,
+        orderStatusGroupId: order.orderStatus?.orderStatusGroupId,
+      ));
 
       if (i < printData.printData!.orders!.length - 1) addSeparatorWidget(widgetList);
     }
