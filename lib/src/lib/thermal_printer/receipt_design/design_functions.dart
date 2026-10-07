@@ -572,14 +572,13 @@ abstract class DesignFunctions {
 
   Widget createColumnFromOrderDetailWidget(
     List<PrinterQueueResponseOrderOrderItemModel> items, {
-    bool isPriceVisible = true,
     String? orderStatusGroupId,
+    bool isPriceVisible = true,
+    bool printCancelItem = false,
   }) {
-    const fontFamily = 'Poppins';
-
     List<Widget> children = [];
 
-    Widget _row(
+    Widget row(
       String col1,
       String? col2, {
       FontWeight fontWeight = FontWeight.w500,
@@ -608,7 +607,7 @@ abstract class DesignFunctions {
                 child: Text(
                   col2,
                   textAlign: TextAlign.right,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 34,
                     fontFamily: fontFamily,
                     fontWeight: FontWeight.w500,
@@ -621,11 +620,11 @@ abstract class DesignFunctions {
       );
     }
 
-    List<Widget> _addOption(String title, List<OrderOptionItem>? items, double leftPadding) {
+    List<Widget> addOption(String title, List<OrderOptionItem>? items, double leftPadding) {
       if (items?.isNotEmpty != true) return [];
       List<Widget> optionWidgets = [];
       optionWidgets.add(
-        _row('$title: ', null, fontWeight: FontWeight.w500, leftPadding: leftPadding),
+        row('$title: ', null, fontWeight: FontWeight.w500, leftPadding: leftPadding),
       );
       String tempString = "";
       for (var item in items!) {
@@ -633,7 +632,7 @@ abstract class DesignFunctions {
       }
       if (tempString.isNotEmpty) {
         tempString = tempString.substring(0, tempString.length - 2);
-        optionWidgets.add(_row(tempString, null, leftPadding: leftPadding));
+        optionWidgets.add(row(tempString, null, leftPadding: leftPadding));
       }
 
       return optionWidgets;
@@ -645,8 +644,13 @@ abstract class DesignFunctions {
       final countStr = '${item.count}x';
 
       /// ITEM TITLE
-      if (item.status!.statusCode == OrderItemStatusId.CANCEL.name ||
-          orderStatusGroupId == OrderStatusGroup.CANCEL.name) {
+      final isItemCancelled = item.status?.statusCode == OrderItemStatusId.CANCEL.name;
+      final isOrderCancelled = orderStatusGroupId == OrderStatusGroup.CANCEL.name;
+
+      if (isItemCancelled || isOrderCancelled) {
+        // Mutfak fişi hariç diğer fiş türlerinde iptal edilen ürünler basılmaz.
+        if (isItemCancelled && !printCancelItem) continue;
+
         addTextWidget(
           children,
           'İptal Edildi',
@@ -662,7 +666,7 @@ abstract class DesignFunctions {
       }
 
       children.add(
-        _row('$countStr${item.itemTitle!}', totalPrice, fontWeight: FontWeight.w700),
+        row('$countStr${item.itemTitle!}', totalPrice, fontWeight: FontWeight.w700),
       );
       children.add(const SizedBox(height: 10));
 
@@ -675,7 +679,7 @@ abstract class DesignFunctions {
             if (option.items?.isNotEmpty == true) {
               /// options item -----------------------------------------------
               children.addAll(
-                _addOption(option.title!, option.items, countStr.length * 8),
+                addOption(option.title!, option.items, countStr.length * 8),
               );
 
               children.add(const SizedBox(height: 10));
@@ -685,7 +689,7 @@ abstract class DesignFunctions {
           /// PROMOTION_MENU -----------------------------------------------
           for (var option in item.options!) {
             /// section title -----------------------------------------------
-            children.add(_row(
+            children.add(row(
               '-${option.sectionTitle!}:',
               null,
               fontWeight: FontWeight.w500,
@@ -693,7 +697,7 @@ abstract class DesignFunctions {
             ));
 
             /// section product name -----------------------------------------------
-            children.add(_row(
+            children.add(row(
               option.sectionItem!.productName!,
               null,
               leftPadding: (countStr.length + 3) * 8,
@@ -703,7 +707,7 @@ abstract class DesignFunctions {
             for (var sectionOption in option.sectionItem!.options!) {
               /// options item -----------------------------------------------
               children.addAll(
-                _addOption(sectionOption.title!, sectionOption.items, (countStr.length + 3) * 8),
+                addOption(sectionOption.title!, sectionOption.items, (countStr.length + 3) * 8),
               );
             }
             children.add(const SizedBox(height: 10));
@@ -718,7 +722,7 @@ abstract class DesignFunctions {
 
       /// item Note -----------------------------------------------
       if (item.itemNote?.isNotEmpty == true) {
-        children.add(_row(
+        children.add(row(
           'Ürün Notu: ${item.itemNote!}',
           null,
           fontWeight: FontWeight.w700,

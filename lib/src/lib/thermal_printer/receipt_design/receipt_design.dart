@@ -648,6 +648,7 @@ class ReceiptDesign extends DesignFunctions {
       widgetList.add(createColumnFromOrderDetailWidget(
         order.items!,
         isPriceVisible: false,
+        printCancelItem: true,
         orderStatusGroupId: order.orderStatus?.orderStatusGroupId,
       ));
 
