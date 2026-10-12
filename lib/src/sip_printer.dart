@@ -1,5 +1,3 @@
-import 'package:sip_models/ri_models.dart';
-
 class SipPrinter {
   static late SipPrinter instance;
   String headerTitle;

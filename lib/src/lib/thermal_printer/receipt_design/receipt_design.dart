@@ -6,6 +6,7 @@ import 'package:sip_printer/src/extanstion/extension_string.dart';
 import 'package:sip_printer/src/extanstion/general_extenstion.dart';
 import 'design_functions.dart';
 import 'package:sip_models/ri_models.dart';
+import 'package:image/image.dart' as img show Image;
 
 class ReceiptDesign extends DesignFunctions {
   ReceiptDesign(super.generator, super._paperSize);
@@ -48,7 +49,7 @@ class ReceiptDesign extends DesignFunctions {
     }
   }
 
-  Future<List<int>> createReceiptForTakeoutWidget(PrinterQueueResponseModel printData) async {
+  Future<(List<int>, img.Image)> createReceiptForTakeoutWidget(PrinterQueueResponseModel printData) async {
     try {
       final List<Widget> widgetList = [];
 
@@ -120,7 +121,7 @@ class ReceiptDesign extends DesignFunctions {
     }
   }
 
-  Future<List<int>> createReceiptForGetInWidget(PrinterQueueResponseModel printData) async {
+  Future<(List<int>, img.Image)> createReceiptForGetInWidget(PrinterQueueResponseModel printData) async {
     try {
       final List<Widget> widgetList = [];
 
@@ -232,7 +233,7 @@ class ReceiptDesign extends DesignFunctions {
   }
 
   /// sipariş fişi
-  Future<List<int>> createReceiptForTableWidget(PrinterQueueResponseModel printData) async {
+  Future<(List<int>, img.Image)> createReceiptForTableWidget(PrinterQueueResponseModel printData) async {
     try {
       final List<Widget> widgetList = [];
 
@@ -355,7 +356,7 @@ class ReceiptDesign extends DesignFunctions {
   }
 
   /// kasa fişi
-  Future<List<int>> createReceiptForCashRegisterWidget(PrinterQueueResponseModel printData) async {
+  Future<(List<int>, img.Image)> createReceiptForCashRegisterWidget(PrinterQueueResponseModel printData) async {
     try {
       final List<Widget> widgetList = [];
 
@@ -437,7 +438,7 @@ class ReceiptDesign extends DesignFunctions {
   }
 
   /// masa adisyonu
-  Future<List<int>> createReceiptForTableBillWidget(PrinterQueueResponseModel printData) async {
+  Future<(List<int>, img.Image)> createReceiptForTableBillWidget(PrinterQueueResponseModel printData) async {
     try {
       final List<Widget> widgetList = [];
 
@@ -535,7 +536,7 @@ class ReceiptDesign extends DesignFunctions {
   }
 
   /// print Report
-  Future<List<int>> createReceiptForReportWidget(DailyReportModel printModel) async {
+  Future<(List<int>, img.Image)> createReceiptForReportWidget(DailyReportModel printModel) async {
     try {
       final List<Widget> widgetList = [];
 
@@ -626,7 +627,7 @@ class ReceiptDesign extends DesignFunctions {
     }
   }
 
-  Future<List<int>> createReceiptForKitchenByWidget(PrinterQueueResponseModel printData) async {
+  Future<(List<int>, img.Image)> createReceiptForKitchenByWidget(PrinterQueueResponseModel printData) async {
     final List<Widget> widgetList = [];
 
     /// slip title ------------------------------------------------------------------
@@ -673,7 +674,7 @@ class ReceiptDesign extends DesignFunctions {
     return byte;
   }
 
-  Future<List<int>> testTicketWidget() async {
+  Future<(List<int>, img.Image)> testTicketWidget() async {
     try {
       final List<Widget> widgetList = [];
 
