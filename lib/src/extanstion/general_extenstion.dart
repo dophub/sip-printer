@@ -23,22 +23,19 @@ extension CustomerAddressModelExtension on CustomerAddressModel {
 extension PriceFormat on double {
   String getPrice({
     bool withOutDigitNumber = false,
+    bool trimTrailingZeros = false,
   }) {
-    final int decimalDigits;
-    final String customPattern;
-    if (withOutDigitNumber) {
-      decimalDigits = 0;
-      customPattern = '#,##0.00\u00A4';
-    } else {
-      decimalDigits = 2;
-      customPattern = '#,##0.00\u00A4';
-    }
-    var percent = NumberFormat.currency(
+    final decimalDigits = withOutDigitNumber
+        ? 0
+        : trimTrailingZeros
+            ? (this % 1 == 0 ? 0 : 2)
+            : 2;
+    final formatter = NumberFormat.currency(
       locale: SipPrinter.instance.languageCode,
       symbol: SipPrinter.instance.priceUnit,
       decimalDigits: decimalDigits,
-      customPattern: customPattern,
+      customPattern: '#,##0.00\u00A4',
     );
-    return percent.format(this);
+    return formatter.format(this);
   }
 }

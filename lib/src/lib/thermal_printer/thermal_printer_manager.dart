@@ -9,7 +9,7 @@ import 'package:sip_models/ri_enum.dart';
 import 'package:sip_models/ri_models.dart';
 import 'package:sip_printer/src/lib/thermal_printer/receipt_design/receipt_design.dart';
 import 'package:usb_printer/usb_printer.dart';
-
+import 'package:image/image.dart' as img show Image;
 import '../network/network_print_result.dart';
 import '../network/network_printer.dart';
 
@@ -25,7 +25,8 @@ class ThermalPrinterManager {
   }
 
   /// Sipariş Fişi
-  Future<List<int>> createReceiptForTable(PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
+  Future<(List<int>, img.Image)> createReceiptForTable(
+      PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
       return ReceiptDesign(Generator(type, _profile), type).createReceiptForTableWidget(printModel);
@@ -35,7 +36,8 @@ class ThermalPrinterManager {
   }
 
   /// Gel Al
-  Future<List<int>> createReceiptForGetIn(PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
+  Future<(List<int>, img.Image)> createReceiptForGetIn(
+      PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
       return ReceiptDesign(Generator(type, _profile), type).createReceiptForGetInWidget(printModel);
@@ -45,10 +47,10 @@ class ThermalPrinterManager {
   }
 
   /// Paket Siparisi
-  Future<List<int>> createReceiptForTakeout(
+  Future<(List<int>, img.Image)> createReceiptForTakeout(
     PrinterPaperTypeEnum paperSize,
     PrinterQueueResponseModel printModel,
-  ) async {
+  ) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
       return ReceiptDesign(Generator(type, _profile), type).createReceiptForTakeoutWidget(printModel);
@@ -58,7 +60,8 @@ class ThermalPrinterManager {
   }
 
   /// Kasa Fişi
-  Future<List<int>> createReceiptForCashRegister(PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
+  Future<(List<int>, img.Image)> createReceiptForCashRegister(
+      PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
       return ReceiptDesign(Generator(type, _profile), type).createReceiptForCashRegisterWidget(printModel);
@@ -68,7 +71,8 @@ class ThermalPrinterManager {
   }
 
   /// Masa Adisyonu
-  Future<List<int>> createReceiptForTableBill(PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
+  Future<(List<int>, img.Image)> createReceiptForTableBill(
+      PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
       return ReceiptDesign(Generator(type, _profile), type).createReceiptForTableBillWidget(printModel);
@@ -78,7 +82,7 @@ class ThermalPrinterManager {
   }
 
   /// print report
-  Future<List<int>> createReceiptForReport(PrinterPaperTypeEnum paperSize, DailyReportModel printModel) {
+  Future<(List<int>, img.Image)> createReceiptForReport(PrinterPaperTypeEnum paperSize, DailyReportModel printModel) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
       return ReceiptDesign(Generator(type, _profile), type).createReceiptForReportWidget(printModel);
@@ -88,7 +92,7 @@ class ThermalPrinterManager {
   }
 
   /// print kitchen order
-  Future<List<int>> createReceiptForKitchenOrderByWidget(
+  Future<(List<int>, img.Image)> createReceiptForKitchenOrder(
     PrinterPaperTypeEnum paperSize,
     PrinterQueueResponseModel printModel,
   ) async {
@@ -100,7 +104,7 @@ class ThermalPrinterManager {
     }
   }
 
-  Future<List<int>> createReceiptForTest(PrinterPaperTypeEnum paperSize) {
+  Future<(List<int>, img.Image)> createReceiptForTest(PrinterPaperTypeEnum paperSize) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
       return ReceiptDesign(Generator(type, _profile), type).testTicketWidget();

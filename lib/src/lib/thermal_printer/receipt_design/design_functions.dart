@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +12,7 @@ import 'package:sip_printer/src/extanstion/extension_string.dart';
 import 'package:sip_printer/src/extanstion/general_extenstion.dart';
 import 'package:sip_models/ri_models.dart';
 import 'package:image/image.dart' as img show Image, decodeImage, grayscale;
+import 'package:sip_printer/src/lib/thermal_printer/component/price_text_widget.dart';
 import '../../../sip_printer.dart';
 import 'package:flutter/rendering.dart'
     show RenderRepaintBoundary, PipelineOwner, RenderView, RenderPositionedBox, ViewConfiguration;
@@ -203,7 +203,7 @@ abstract class DesignFunctions {
 
     /// order no ------------------------------------------------------------------
     /// sipariş numarasının son 4 hanesi random sayıdır
-    final String id = '${order.id!}${(Random().nextInt(10000) + 1000)}';
+    final String id = order.id.toString();
     byte.addAll(
       generator.row([
         PosColumn(
@@ -294,12 +294,12 @@ abstract class DesignFunctions {
     );
 
     /// Customer Phone no ------------------------------------------------------------------
-    if (printCustomerPhoneNo) {
+    if (printCustomerPhoneNo && order.customer?.phoneNumber != null) {
       byte.addAll(
         generator.row([
           PosColumn(
             width: 12,
-            text: _createTowColumn('Telefon No: ', '${order.customer?.phoneNumber}'),
+            text: _createTowColumn('Telefon No: ', '${order.customer!.phoneNumber}'),
             styles: const PosStyles(
               align: PosAlign.left,
               width: PosTextSize.size1,
@@ -382,7 +382,7 @@ abstract class DesignFunctions {
 
     /// order no ------------------------------------------------------------------
     /// sipariş numarasının son 4 hanesi random sayıdır
-    final String id = '${order.id!}${(Random().nextInt(10000) + 1000)}';
+    final String id = order.id.toString();
     widgetList.add(
       addRowWidget('Sipariş No: ', id),
     );
@@ -419,7 +419,7 @@ abstract class DesignFunctions {
     }
 
     /// Customer Phone no ------------------------------------------------------------------
-    if (printCustomerPhoneNo) {
+    if (printCustomerPhoneNo && order.customer?.phoneNumber != null) {
       customerInfoList.add(
         addRowWidget('Telefon No: ', '${order.customer?.phoneNumber}'),
       );
@@ -579,8 +579,8 @@ abstract class DesignFunctions {
     List<Widget> children = [];
 
     Widget row(
-      String col1,
-      String? col2, {
+      String col1, {
+      Widget? col2Widget,
       FontWeight fontWeight = FontWeight.w500,
       double leftPadding = 0,
     }) {
@@ -601,20 +601,15 @@ abstract class DesignFunctions {
                 ),
               ),
             ),
-            if (col2 != null)
-              Expanded(
-                flex: 5,
-                child: Text(
-                  col2,
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    fontSize: 34,
-                    fontFamily: fontFamily,
-                    fontWeight: FontWeight.w500,
-                    height: 1.2,
-                  ),
-                ),
-              ),
+            col2Widget != null
+                ? Expanded(
+                    flex: 5,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: col2Widget,
+                    ),
+                  )
+                : const SizedBox(),
           ],
         ),
       );
@@ -624,7 +619,7 @@ abstract class DesignFunctions {
       if (items?.isNotEmpty != true) return [];
       List<Widget> optionWidgets = [];
       optionWidgets.add(
-        row('$title: ', null, fontWeight: FontWeight.w500, leftPadding: leftPadding),
+        row('$title: ', fontWeight: FontWeight.w500, leftPadding: leftPadding),
       );
       String tempString = "";
       for (var item in items!) {
@@ -632,7 +627,7 @@ abstract class DesignFunctions {
       }
       if (tempString.isNotEmpty) {
         tempString = tempString.substring(0, tempString.length - 2);
-        optionWidgets.add(row(tempString, null, leftPadding: leftPadding));
+        optionWidgets.add(row(tempString, leftPadding: leftPadding));
       }
 
       return optionWidgets;
@@ -660,13 +655,21 @@ abstract class DesignFunctions {
       }
 
       /// item Title - Price -----------------------------------------------
-      String? totalPrice;
-      if (isPriceVisible == true) {
-        totalPrice = item.totalPrice != null ? "${item.totalPrice!.toStringAsFixed(2)}TL" : null;
+      Widget? price;
+      if (isPriceVisible == true && item.totalPrice != null) {
+        price = PriceTextWidget(
+          direction: Axis.vertical,
+          textDirection: TextDirection.rtl,
+          price: item.totalPrice!,
+          discountPrice:
+              item.afterManualDiscountItemPrice ?? (item.isUseCampaign == true ? item.beforeCampaignItemPrice : null),
+          isComplimentary: item.manualDiscountTypeId == ManuelDiscountType.giveaway.discountType,
+          textHeight: 1,
+        );
       }
 
       children.add(
-        row('$countStr${item.itemTitle!}', totalPrice, fontWeight: FontWeight.w700),
+        row('$countStr${item.itemTitle!}', col2Widget: price, fontWeight: FontWeight.w700),
       );
       children.add(const SizedBox(height: 10));
 
@@ -691,7 +694,6 @@ abstract class DesignFunctions {
             /// section title -----------------------------------------------
             children.add(row(
               '-${option.sectionTitle!}:',
-              null,
               fontWeight: FontWeight.w500,
               leftPadding: countStr.length * 8,
             ));
@@ -699,7 +701,6 @@ abstract class DesignFunctions {
             /// section product name -----------------------------------------------
             children.add(row(
               option.sectionItem!.productName!,
-              null,
               leftPadding: (countStr.length + 3) * 8,
             ));
 
@@ -724,7 +725,6 @@ abstract class DesignFunctions {
       if (item.itemNote?.isNotEmpty == true) {
         children.add(row(
           'Ürün Notu: ${item.itemNote!}',
-          null,
           fontWeight: FontWeight.w700,
           leftPadding: countStr.length * 8,
         ));
@@ -807,7 +807,12 @@ abstract class DesignFunctions {
       final totalTipAmount = '${printData.totalTipAmount?.toStringAsFixed(2)}TL';
 
       widgetList.add(
-        addRowWidget('Bahşiş: ', totalTipAmount),
+        addRowWidget(
+          flex1: 3,
+          flex2: 2,
+          'BAHŞİŞ:',
+          totalTipAmount,
+        ),
       );
     }
 
@@ -816,22 +821,67 @@ abstract class DesignFunctions {
       final tableServiceAmount = '${printData.tableServiceAmount?.toStringAsFixed(2)}TL';
 
       widgetList.add(
-        addRowWidget('Masaya Servis: ', tableServiceAmount),
+        addRowWidget(
+          flex1: 3,
+          flex2: 2,
+          'MASAYA SERVİS:',
+          tableServiceAmount,
+        ),
       );
     }
 
-    /// total amount ------------------------------------------------------------------
-    final double totalAmount;
-    if (printData.orders!.first.orderPointId == OrderPoint.TABLE.name) {
-      totalAmount = printData.serviceTotalAmount!;
-    } else {
-      totalAmount = printData.orders!.first.totalAmount!;
+    /// indirim ------------------------------------------------------------------
+    final List<Widget> discounts = [];
+    for (int i = 0; i < printData.orders!.length; i++) {
+      final order = printData.orders![i];
+      final campaign = order.campaigns!.firstOrNull;
+      if (campaign != null) {
+        discounts.add(
+          addRowWidget(
+            flex1: 3,
+            flex2: 2,
+            campaign.spotTitle!,
+            '-${campaign.campaignAmount!.getPrice()} ',
+            col1MaxLines: 1,
+          ),
+        );
+      }
+
+      final discount = order.discounts!.firstWhereOrNull((e) => e.isActive == true);
+      if (discount != null) {
+        discounts.add(
+          addRowWidget(
+            flex1: 3,
+            flex2: 2,
+            'İNDİRİM TUTARI:',
+            '-${discount.manualDiscountAmount?.getPrice()}',
+          ),
+        );
+      }
     }
 
+    if (discounts.isNotEmpty) {
+      widgetList.add(
+        addRowWidget(
+          flex1: 3,
+          flex2: 2,
+          'TOPLAM TUTAR:',
+          (printData.orders!.first.beforeCampaignTotal ?? 0).getPrice(),
+        ),
+      );
+      widgetList.addAll(discounts);
+    }
+
+    /// total amount ------------------------------------------------------------------
     widgetList.add(
       addRowWidget(
-        'TOPLAM TUTAR: ',
-        '${totalAmount.toStringAsFixed(2)}TL',
+        flex1: 3,
+        flex2: 2,
+        'ÖDENECEK TUTAR:',
+        (printData.orders!.first.orderPointId == OrderPoint.TABLE.name
+                ? printData.serviceTotalAmount ?? 0
+                : printData.orders!.first.totalAmount ?? 0)
+            .getPrice(),
       ),
     );
   }
@@ -1232,7 +1282,14 @@ abstract class DesignFunctions {
     }
   }
 
-  addRowWidget(String col1, String col2, {int flex1 = 5, int flex2 = 6}) => Row(
+  addRowWidget(
+    String col1,
+    String col2, {
+    int flex1 = 5,
+    int flex2 = 6,
+    int? col1MaxLines,
+  }) =>
+      Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
@@ -1244,7 +1301,9 @@ abstract class DesignFunctions {
                 fontFamily: fontFamily,
                 fontWeight: FontWeight.w500,
                 height: 1.2,
+                overflow: TextOverflow.ellipsis,
               ),
+              maxLines: col1MaxLines,
             ),
           ),
           Expanded(
@@ -1263,7 +1322,7 @@ abstract class DesignFunctions {
         ],
       );
 
-  Future<List<int>> createImageAndConvert(
+  Future<(List<int>, img.Image)> createImageAndConvert(
     Widget widget,
   ) async {
     final total = Stopwatch()..start();
@@ -1294,7 +1353,7 @@ abstract class DesignFunctions {
       'bytes=${bytes.length}',
     );
 
-    return bytes;
+    return (bytes, image);
   }
 
   Future<img.Image> _createImageFromWidget(Widget widget) async {
