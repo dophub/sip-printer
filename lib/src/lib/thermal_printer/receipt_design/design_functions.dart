@@ -847,7 +847,7 @@ abstract class DesignFunctions {
         );
       }
 
-      if ([ManuelDiscountType.noDiscount.discountType, null].contains(order.manualDiscountTypeId) == false) {
+      if (order.totalManualDiscount != null && order.totalManualDiscount! > 0) {
         discounts.add(
           addRowWidget(
             flex1: 3,
