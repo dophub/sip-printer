@@ -1,358 +1,169 @@
 import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:collection/collection.dart';
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:image/image.dart' as img;
 import 'package:intl/intl.dart' show DateFormat;
-import 'package:qr_flutter/qr_flutter.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart' show Printing;
 import 'package:sip_models/enum.dart';
 import 'package:sip_models/request.dart';
 import 'package:sip_models/ri_enum.dart';
+import 'package:sip_models/ri_models.dart';
 import 'package:sip_printer/src/extanstion/extension_string.dart';
 import 'package:sip_printer/src/extanstion/general_extenstion.dart';
-import 'package:sip_models/ri_models.dart';
-import 'package:image/image.dart' as img show Image, decodeImage, grayscale;
-import 'package:sip_printer/src/lib/thermal_printer/component/price_text_widget.dart';
+
 import '../../../sip_printer.dart';
-import 'package:flutter/rendering.dart'
-    show RenderRepaintBoundary, PipelineOwner, RenderView, RenderPositionedBox, ViewConfiguration;
-import 'dart:ui' show ImageByteFormat;
 
 abstract class DesignFunctions {
-  late final int maxLineCharacterCount;
-  late final PaperSize paperSize;
-  final Generator generator;
-  String fontFamily = 'Poppins';
+  late final PrinterPaperTypeEnum paperSize;
 
-  DesignFunctions(this.generator, PaperSize? _paperSize) {
-    paperSize = _paperSize ?? PaperSize.mm80;
-    if (paperSize == PaperSize.mm80) {
-      maxLineCharacterCount = 47;
-    } else {
-      maxLineCharacterCount = 31;
-    }
+  /// Piksel genişliği (203 dpi'da 80mm = 576, 58mm = 384)
+  late final double paperWidth;
+
+  /// Kağıt kenar boşluğu (PDF birimi)
+  static const double _horizontalPadding = 8;
+
+  /// PDF -> image çözünürlüğü. 72 dpi = 1 pt = 1 px.
+  /// Yüksek dpi ile render edilip sonra yazıcı genişliğine küçültülür (daha net çıktı).
+  static const double _rasterDpi = 72;
+
+  /// Font asset yolları (Türkçe karakter desteği için TTF şart)
+
+  DesignFunctions(this.paperSize) {
+    paperWidth = paperSize == PrinterPaperTypeEnum.mm80 ? 576 : 384;
   }
 
-  void addReceiptTitle(List<int> byte, String title) {
-    addCenterText(byte, title, width: PosTextSize.size2, height: PosTextSize.size2);
-  }
+  pw.FontWeight _w(bool bold) => bold ? pw.FontWeight.bold : pw.FontWeight.normal;
 
-  void addReceiptTitleWidget(List<Widget> list, String title) {
-    addTextWidget(list, title, fontWeight: FontWeight.bold, fontSize: 50);
-  }
-
-  void addHeader(
-    List<int> byte,
-    PrinterQueueResponsePrintDataModel printData, {
-    bool printTableNo = true,
-    bool printPayment = false,
+  void addTextWidget(
+    List<pw.Widget> list,
+    String title, {
+    double? fontSize = 32,
+    pw.FontWeight? fontWeight,
+    pw.TextAlign textAlign = pw.TextAlign.center,
   }) {
-    if (printData.paymentModelId == PaymentModelID.PRE.name) {
-      /// Sıra numarası ------------------------------------------------------------------
-      if (printData.numberOfService != null) {
-        addReceiptTitle(byte, "Sıra Numarası");
-        addReceiptTitle(byte, printData.numberOfService.toString());
-        addEmptyLines(byte);
-      }
-
-      /// Pleksi numarası ------------------------------------------------------------------
-      if (printData.pleksiNumber != null) {
-        addReceiptTitle(byte, "Pleksi Numarası");
-        addReceiptTitle(byte, printData.pleksiNumber.toString());
-        addEmptyLines(byte);
-      }
-
-      /// service type ------------------------------------------------------------------
-      final String? txt = printData.serviceDeliveryType?.enumFromString(TableServiceType.values)?.title;
-      if (txt != null) {
-        byte.addAll(
-          generator.row([
-            PosColumn(
-              width: 12,
-              text: _createTowColumn('Servis Tipi: ', txt),
-              styles: const PosStyles(
-                align: PosAlign.left,
-                width: PosTextSize.size1,
-                bold: true,
-              ),
-            ),
-          ]),
-        );
-      }
-    }
-
-    /// table no ------------------------------------------------------------------
-    if (printTableNo) {
-      byte.addAll(generator.row([
-        PosColumn(
-          width: 12,
-          text: _createTowColumn('Masa: ', (printData.tableInfo?.tableName).toString()),
-          styles: const PosStyles(
-            align: PosAlign.left,
-            width: PosTextSize.size1,
-            bold: true,
-          ),
+    list.add(
+      pw.SizedBox(
+        width: paperWidth - _horizontalPadding * 2,
+        child: pw.Text(
+          title,
+          style: pw.TextStyle(fontSize: fontSize, fontWeight: fontWeight, height: 1.2),
+          textAlign: textAlign,
         ),
-      ]));
-    }
+      ),
+    );
+  }
 
-    /// payment type ------------------------------------------------------------------
-    if (printPayment) {
-      byte.addAll(
-        generator.row([
-          PosColumn(
-            width: 12,
-            text: _createTowColumn('Ödeme Tipi: ', "${printData.paymentType}".withoutDiacriticalMarks()),
-            styles: const PosStyles(
-              align: PosAlign.left,
-              width: PosTextSize.size1,
-              bold: true,
+  void addEmptyLinesWidget(List<pw.Widget> list, {int count = 1}) {
+    list.addAll(List.generate(count, (_) => pw.SizedBox(height: 38)));
+  }
+
+  void addReceiptTitleWidget(List<pw.Widget> list, String title) {
+    addTextWidget(list, title, fontWeight: pw.FontWeight.bold, fontSize: 50);
+  }
+
+  /// Kesik çizgili ayraç
+  void addSeparatorWidget(List<pw.Widget> list) {
+    final w = paperWidth - _horizontalPadding * 2;
+    list.add(
+      pw.SizedBox(
+        width: w,
+        height: 12,
+        child: pw.CustomPaint(
+          size: PdfPoint(w, 12),
+          painter: (PdfGraphics canvas, PdfPoint size) {
+            canvas
+              ..setStrokeColor(PdfColors.black)
+              ..setLineWidth(1.6)
+              ..setLineDashPattern([6, 4])
+              ..drawLine(0, size.y / 2, size.x, size.y / 2)
+              ..strokePath();
+          },
+        ),
+      ),
+    );
+  }
+
+  pw.Widget addRowWidget(
+    String col1,
+    String col2, {
+    int flex1 = 5,
+    int flex2 = 6,
+    int? col1MaxLines,
+  }) {
+    return pw.SizedBox(
+      width: paperWidth - _horizontalPadding * 2,
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Expanded(
+            flex: flex1,
+            child: pw.Text(
+              col1,
+              style: const pw.TextStyle(fontSize: 32, height: 1.2),
+              maxLines: col1MaxLines,
             ),
           ),
-        ]),
-      );
-    }
+          pw.Expanded(
+            flex: flex2,
+            child: pw.Text(
+              col2,
+              style: const pw.TextStyle(fontSize: 32, height: 1.2),
+              textAlign: pw.TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
   }
+
+  void addTowColumnWidget(List<pw.Widget> widgetList, String col1, String col2) =>
+      widgetList.add(addRowWidget(col1, col2));
 
   void addHeaderWidget(
-    List<Widget> widgetList,
+    List<pw.Widget> widgetList,
     PrinterQueueResponsePrintDataModel printData, {
     bool printTableNo = true,
     bool printPayment = false,
   }) {
     if (printData.paymentModelId == PaymentModelID.PRE.name) {
-      /// Sıra numarası ------------------------------------------------------------------
+      /// Sıra numarası
       if (printData.numberOfService != null) {
-        addReceiptTitleWidget(widgetList, "Sıra Numarası");
+        addReceiptTitleWidget(widgetList, 'Sıra Numarası');
         addReceiptTitleWidget(widgetList, printData.numberOfService.toString());
         addEmptyLinesWidget(widgetList);
       }
 
-      /// Pleksi numarası ------------------------------------------------------------------
+      /// Pleksi numarası
       if (printData.pleksiNumber != null) {
-        addReceiptTitleWidget(widgetList, "Pleksi Numarası");
+        addReceiptTitleWidget(widgetList, 'Pleksi Numarası');
         addReceiptTitleWidget(widgetList, printData.pleksiNumber.toString());
         addEmptyLinesWidget(widgetList);
       }
 
-      /// service type ------------------------------------------------------------------
+      /// service type
       final String? txt = printData.serviceDeliveryType?.enumFromString(TableServiceType.values)?.title;
       if (txt != null) {
-        widgetList.add(
-          addRowWidget('Servis Tipi: ', txt),
-        );
+        widgetList.add(addRowWidget('Servis Tipi: ', txt));
       }
     }
 
-    /// table no ------------------------------------------------------------------
+    /// table no
     if (printTableNo) {
-      widgetList.add(
-        addRowWidget('Masa: ', printData.tableInfo?.tableName ?? '-'),
-      );
+      widgetList.add(addRowWidget('Masa: ', printData.tableInfo?.tableName ?? '-'));
     }
 
-    /// payment type ------------------------------------------------------------------
+    /// payment type
     if (printPayment) {
-      widgetList.add(
-        addRowWidget('Ödeme Tipi: ', printData.paymentType ?? '-'),
-      );
-    }
-  }
-
-  void addOrderHeader(
-    List<int> byte,
-    PrinterQuequeResponseOrderModel order, {
-    bool printPayment = true,
-    printCustomerPhoneNo = false,
-    printCustomerAddress = false,
-  }) {
-    /// payment type ------------------------------------------------------------------
-    if (printPayment) {
-      byte.addAll(
-        generator.row([
-          PosColumn(
-            width: 12,
-            text: _createTowColumn('Ödeme Tipi: ', "${order.paymentInfo?.name}".withoutDiacriticalMarks()),
-            styles: const PosStyles(
-              align: PosAlign.left,
-              width: PosTextSize.size1,
-              bold: true,
-            ),
-          ),
-        ]),
-      );
-      final String isPayedStr = order.paymentInfo?.isOnlinePayment == null
-          ? 'null'
-          : order.paymentInfo!.isOnlinePayment == true
-              ? 'Yapıldı'
-              : 'Yapılmadı';
-      byte.addAll(
-        generator.row([
-          PosColumn(
-            width: 12,
-            text: _createTowColumn('Ödeme Durumu: ', isPayedStr),
-            styles: const PosStyles(
-              align: PosAlign.left,
-              width: PosTextSize.size1,
-              bold: true,
-            ),
-          ),
-        ]),
-      );
-    }
-
-    /// order no ------------------------------------------------------------------
-    /// sipariş numarasının son 4 hanesi random sayıdır
-    final String id = order.id.toString();
-    byte.addAll(
-      generator.row([
-        PosColumn(
-          width: 12,
-          text: _createTowColumn('Sipariş No: ', id),
-          styles: const PosStyles(
-            align: PosAlign.left,
-            width: PosTextSize.size1,
-            bold: true,
-          ),
-        ),
-      ]),
-    );
-
-    /// order code ------------------------------------------------------------------
-    /// sipariş numarasının son 4 hanesi random sayıdır
-    final String code = order.orderNumber ?? '';
-    if (code.trim().isNotEmpty) {
-      byte.addAll(
-        generator.row([
-          PosColumn(
-            width: 12,
-            text: _createTowColumn('Sipariş kodu: ', code),
-            styles: const PosStyles(
-              align: PosAlign.left,
-              width: PosTextSize.size1,
-              bold: true,
-            ),
-          ),
-        ]),
-      );
-    }
-
-    /// create date ------------------------------------------------------------------
-    final date = DateFormat('dd.MM.yyyy HH:mm').format(order.recordDate ?? DateTime.now()).withoutDiacriticalMarks();
-    byte.addAll(
-      generator.row([
-        PosColumn(
-          width: 12,
-          text: _createTowColumn('Tarih: ', date),
-          styles: const PosStyles(
-            align: PosAlign.left,
-            width: PosTextSize.size1,
-            bold: true,
-          ),
-        ),
-      ]),
-    );
-
-    /// işlem no ------------------------------------------------------------------
-    if ((order.prefixedOrderNumber ?? '').isNotEmpty) {
-      byte.addAll(
-        generator.row([
-          PosColumn(
-            width: 12,
-            text: _createTowColumn('İşlem No: ', order.prefixedOrderNumber!),
-            styles: const PosStyles(
-              align: PosAlign.left,
-              width: PosTextSize.size1,
-              bold: true,
-            ),
-          ),
-        ]),
-      );
-    }
-
-    addSeparator(byte);
-
-    /// customer name ------------------------------------------------------------------
-    final String customerName;
-    if (order.orderPointId == OrderPoint.TABLE.name) {
-      customerName = order.nickName.maskNullableSurname().withoutDiacriticalMarks();
-    } else {
-      customerName = order.customer!.nameSurname!.withoutDiacriticalMarks();
-    }
-    byte.addAll(
-      generator.row([
-        PosColumn(
-          width: 12,
-          text: _createTowColumn('Müşteri: ', customerName),
-          styles: const PosStyles(
-            align: PosAlign.left,
-            width: PosTextSize.size1,
-            bold: true,
-          ),
-        ),
-      ]),
-    );
-
-    /// Customer Phone no ------------------------------------------------------------------
-    if (printCustomerPhoneNo && order.customer?.phoneNumber != null) {
-      byte.addAll(
-        generator.row([
-          PosColumn(
-            width: 12,
-            text: _createTowColumn('Telefon No: ', '${order.customer!.phoneNumber}'),
-            styles: const PosStyles(
-              align: PosAlign.left,
-              width: PosTextSize.size1,
-              bold: true,
-            ),
-          ),
-        ]),
-      );
-    }
-
-    /// Customer Address ------------------------------------------------------------------
-    if (printCustomerAddress) {
-      addEmptyLines(byte);
-      List<String> addressStrings = _orderDetailFitter(
-        'Adres: ${order.customerAddress?.getFullAddress.withoutDiacriticalMarks() ?? 'null'}',
-        maxLineCharacterCount,
-      );
-      for (var address in addressStrings) {
-        byte.addAll(
-          generator.text(
-            address,
-            styles: const PosStyles(
-              align: PosAlign.left,
-              bold: true,
-            ),
-          ),
-        );
-      }
-    }
-
-    /// Customer Note ------------------------------------------------------------------
-    if (order.orderNote?.isNotEmpty == true) {
-      addEmptyLines(byte);
-      List<String> orderNoteStrings = _orderDetailFitter(
-        ('Sipariş Notu: ${order.orderNote!}').withoutDiacriticalMarks(),
-        maxLineCharacterCount,
-      );
-      for (var orderNote in orderNoteStrings) {
-        byte.addAll(
-          generator.text(
-            orderNote,
-            styles: const PosStyles(
-              align: PosAlign.left,
-              bold: true,
-            ),
-          ),
-        );
-      }
+      widgetList.add(addRowWidget('Ödeme Tipi: ', printData.paymentType ?? '-'));
     }
   }
 
   void addOrderHeaderWidget(
-    List<Widget> widgetList,
+    List<pw.Widget> widgetList,
     PrinterQuequeResponseOrderModel order, {
     bool printPayment = true,
     bool printCustomerPhoneNo = false,
@@ -360,282 +171,158 @@ abstract class DesignFunctions {
   }) {
     if (order.orderStatus?.orderStatusGroupId == OrderStatusGroup.CANCEL.name) {
       addSeparatorWidget(widgetList);
-      addTextWidget(widgetList, 'Iptal Edildi', fontWeight: FontWeight.bold, fontSize: 50);
+      addTextWidget(widgetList, 'Iptal Edildi', fontWeight: pw.FontWeight.bold, fontSize: 50);
       addSeparatorWidget(widgetList);
     }
 
-    /// payment type ------------------------------------------------------------------
+    /// payment type
     if (printPayment && order.paymentInfo != null) {
-      widgetList.add(
-        addRowWidget('Ödeme Tipi: ', "${order.paymentInfo?.name}"),
-      );
+      widgetList.add(addRowWidget('Ödeme Tipi: ', '${order.paymentInfo?.name}'));
 
       final String isPayedStr = order.paymentInfo?.isOnlinePayment == null
           ? 'null'
           : order.paymentInfo!.isOnlinePayment == true
               ? 'Yapıldı'
               : 'Yapılmadı';
-      widgetList.add(
-        addRowWidget('Ödeme Durumu: ', isPayedStr, flex1: 1, flex2: 1),
-      );
+      widgetList.add(addRowWidget('Ödeme Durumu: ', isPayedStr, flex1: 1, flex2: 1));
     }
 
-    /// order no ------------------------------------------------------------------
-    /// sipariş numarasının son 4 hanesi random sayıdır
-    final String id = order.id.toString();
-    widgetList.add(
-      addRowWidget('Sipariş No: ', id),
-    );
+    /// order no
+    widgetList.add(addRowWidget('Sipariş No: ', order.id.toString()));
 
-/*    /// order code ------------------------------------------------------------------
-    final String code = order.orderNumber ?? '';
-    if (code.trim().isNotEmpty) {
-      widgetList.add(
-        addRowWidget('Sipariş kodu: ', code),
-      );
-    }*/
-
-    /// create date ------------------------------------------------------------------
+    /// create date
     final date = DateFormat('dd.MM.yyyy HH:mm').format(order.recordDate ?? DateTime.now());
-    widgetList.add(
-      addRowWidget('Tarih: ', date),
-    );
+    widgetList.add(addRowWidget('Tarih: ', date));
 
-    /// işlem no ------------------------------------------------------------------
+    /// işlem no
     if ((order.prefixedOrderNumber ?? '').isNotEmpty) {
-      widgetList.add(
-        addRowWidget('İşlem No: ', order.prefixedOrderNumber!),
-      );
+      widgetList.add(addRowWidget('İşlem No: ', order.prefixedOrderNumber!));
     }
 
-    List<Widget> customerInfoList = [];
+    final List<pw.Widget> customerInfoList = [];
     addSeparatorWidget(customerInfoList);
 
-    /// customer name ------------------------------------------------------------------
+    /// customer name
     if ((order.customer?.nameSurname?.trim() ?? '').isNotEmpty) {
-      customerInfoList.add(
-        addRowWidget('Müşteri: ', order.customer!.nameSurname!),
-      );
+      customerInfoList.add(addRowWidget('Müşteri: ', order.customer!.nameSurname!));
     }
 
-    /// Customer Phone no ------------------------------------------------------------------
+    /// Customer Phone no
     if (printCustomerPhoneNo && order.customer?.phoneNumber != null) {
-      customerInfoList.add(
-        addRowWidget('Telefon No: ', '${order.customer?.phoneNumber}'),
-      );
+      customerInfoList.add(addRowWidget('Telefon No: ', '${order.customer?.phoneNumber}'));
     }
 
-    /// Customer Address ------------------------------------------------------------------
+    /// Customer Address
     if (printCustomerAddress) {
       addEmptyLinesWidget(customerInfoList);
       addTextWidget(
         customerInfoList,
         'Adres: ${order.customerAddress?.getFullAddress ?? '-'}',
-        textAlign: TextAlign.start,
-        fontWeight: FontWeight.w600,
+        textAlign: pw.TextAlign.left,
+        fontWeight: pw.FontWeight.bold,
       );
     }
 
-    /// Customer Note ------------------------------------------------------------------
+    /// Customer Note
     if (order.orderNote?.isNotEmpty == true) {
       addEmptyLinesWidget(customerInfoList);
       addTextWidget(
         customerInfoList,
         'Sipariş Notu: ${order.orderNote}',
-        textAlign: TextAlign.start,
-        fontWeight: FontWeight.w600,
+        textAlign: pw.TextAlign.left,
+        fontWeight: pw.FontWeight.bold,
       );
     }
 
     if (customerInfoList.length > 1) widgetList.addAll(customerInfoList);
   }
 
-  void createColumnFromOrderDetail(List<int> byte, List<PrinterQueueResponseOrderOrderItemModel> items) {
-    try {
-      int leftColumnMaxChar = paperSize == PaperSize.mm58 ? 16 : 24;
+  /// Fiyat widget'ı (eski PriceTextWidget'ın PDF karşılığı).
+  /// - ikram:    üstü çizili fiyat + "İkram"
+  /// - indirim:  üstü çizili eski fiyat + güncel fiyat
+  /// - normal:   sadece fiyat
+  pw.Widget _priceWidget({
+    required double price,
+    double? discountPrice,
+    bool isComplimentary = false,
+  }) {
+    const double size = 32;
+    pw.Widget text(String s, {bool strike = false, bool bold = true, double fs = size}) => pw.Text(
+          s,
+          textAlign: pw.TextAlign.right,
+          style: pw.TextStyle(
+            fontSize: fs,
+            height: 1,
+            fontWeight: _w(bold),
+            decoration: strike ? pw.TextDecoration.lineThrough : null,
+          ),
+        );
 
-      void _add(String col1, String col2, [String emptyStr = '', bool bold = false]) => byte.addAll(
-            generator.row([
-              PosColumn(
-                text: emptyStr + col1.withoutDiacriticalMarks(),
-                width: 7,
-                styles: PosStyles(align: PosAlign.left, bold: bold),
-              ),
-              PosColumn(
-                text: col2.withoutDiacriticalMarks(),
-                width: 5,
-                styles: PosStyles(align: PosAlign.left, bold: bold),
-              )
-            ]),
-          );
-
-      for (var i = 0; i < items.length; i++) {
-        final countStr = '${items[i].count.toString()}x';
-        String emptyStr = ' ' * countStr.length;
-
-        /// Function -----------------------------------------------
-        void _addOption(String title, List<OrderOptionItem>? items) {
-          List<String> titleFitter = _orderDetailFitter('$title: ', leftColumnMaxChar);
-
-          /// options item -----------------------------------------------
-          String tempString = "";
-          for (OrderOptionItem itemNames in items!) {
-            tempString = "$tempString${itemNames.title!}, ";
-          }
-
-          if (tempString.isNotEmpty) {
-            tempString = tempString.substring(0, tempString.length - 2);
-            List<String> optionsFitter = _orderDetailFitter(tempString, leftColumnMaxChar);
-            titleFitter.addAll(optionsFitter);
-
-            for (String orderString in titleFitter) {
-              _add(orderString, '', emptyStr);
-            }
-          }
-        }
-
-        /// item Title - Price -----------------------------------------------
-        final List<String> itemsFitted = _orderDetailFitter(items[i].itemTitle!, leftColumnMaxChar);
-        for (var element in itemsFitted) {
-          if (element == itemsFitted.first) {
-            if (items[i].status!.statusCode == OrderItemStatusId.CANCEL.name) {
-              addCenterText(byte, 'Iptal Edildi');
-            }
-            final String totalPrice;
-            if (items[i].totalPrice != null) {
-              totalPrice = "${items[i].totalPrice!.toStringAsFixed(2)}TL".withoutDiacriticalMarks();
-            } else {
-              totalPrice = '';
-            }
-            _add('$countStr$element', _createColumnAndAlignLeft(5, totalPrice), '', true);
-          } else {
-            _add(element, '', emptyStr);
-          }
-        }
-
-        /// options -----------------------------------------------
-        if (items[i].options != null) {
-          /// PRODUCT -----------------------------------------------
-          if (items[i].itemTypeId == ItemType.PRODUCT.name) {
-            /// options -----------------------------------------------
-            for (OrderOption option in items[i].options!) {
-              if (option.items?.isNotEmpty == true) {
-                /// options item -----------------------------------------------
-                _addOption(option.title!, option.items);
-              }
-            }
-          } else if (items[i].itemTypeId == ItemType.PROMOTION_MENU.name) {
-            /// PROMOTION_MENU -----------------------------------------------
-
-            for (OrderOption option in items[i].options!) {
-              /// section title -----------------------------------------------
-              List<String> sectionTitleFitter = _orderDetailFitter(
-                '-${option.sectionTitle!}:',
-                leftColumnMaxChar,
-              );
-              for (String str in sectionTitleFitter) {
-                _add(str, '', emptyStr, true);
-              }
-
-              /// section product name -----------------------------------------------
-              List<String> productNameFitter = _orderDetailFitter(option.sectionItem!.productName!, leftColumnMaxChar);
-              for (String str in productNameFitter) {
-                _add(str, '', emptyStr);
-              }
-
-              /// options -----------------------------------------------
-              for (OrderSectionItemOption sectionOption in option.sectionItem!.options!) {
-                /// options item -----------------------------------------------
-                _addOption(sectionOption.title!, sectionOption.items);
-              }
-            }
-          }
-        }
-
-        /// item Note -----------------------------------------------
-        if (items[i].itemNote?.isNotEmpty == true) {
-          List<String> orderNoteStrings = _orderDetailFitter(
-            'Ürün Notu: ${items[i].itemNote!}',
-            leftColumnMaxChar,
-          );
-          for (var orderNote in orderNoteStrings) {
-            _add(orderNote, '', emptyStr, true);
-          }
-        }
-
-        addEmptyLines(byte);
-      }
-    } catch (e) {
-      rethrow;
+    final children = <pw.Widget>[];
+    if (isComplimentary) {
+      children.add(text('İkram'));
+      children.add(text(price.getPrice(), strike: true, bold: false));
+    } else if (discountPrice != null && discountPrice != price) {
+      children.add(text(discountPrice.getPrice(), strike: true, bold: false));
+      children.add(text(price.getPrice()));
+    } else {
+      children.add(text(price.getPrice()));
     }
+
+    return pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.end, children: children);
   }
 
-  Widget createColumnFromOrderDetailWidget(
+  pw.Widget createColumnFromOrderDetailWidget(
     List<PrinterQueueResponseOrderOrderItemModel> items, {
     String? orderStatusGroupId,
     bool isPriceVisible = true,
     bool printCancelItem = false,
   }) {
-    List<Widget> children = [];
+    final List<pw.Widget> children = [];
 
-    Widget row(
+    pw.Widget row(
       String col1, {
-      Widget? col2Widget,
-      FontWeight fontWeight = FontWeight.w500,
+      pw.Widget? col2Widget,
+      pw.FontWeight fontWeight = pw.FontWeight.normal,
       double leftPadding = 0,
     }) {
-      return Padding(
-        padding: EdgeInsets.only(left: leftPadding),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      return pw.Padding(
+        padding: pw.EdgeInsets.only(left: leftPadding),
+        child: pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            Expanded(
+            pw.Expanded(
               flex: 8,
-              child: Text(
+              child: pw.Text(
                 col1,
-                style: TextStyle(
-                  fontSize: 34,
-                  fontFamily: fontFamily,
-                  fontWeight: fontWeight,
-                  height: 1.2,
-                ),
+                style: pw.TextStyle(fontSize: 34, fontWeight: fontWeight, height: 1.2),
               ),
             ),
             col2Widget != null
-                ? Expanded(
+                ? pw.Expanded(
                     flex: 5,
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: col2Widget,
-                    ),
+                    child: pw.Align(alignment: pw.Alignment.centerRight, child: col2Widget),
                   )
-                : const SizedBox(),
+                : pw.SizedBox(),
           ],
         ),
       );
     }
 
-    List<Widget> addOption(String title, List<OrderOptionItem>? items, double leftPadding) {
+    List<pw.Widget> addOption(String title, List<OrderOptionItem>? items, double leftPadding) {
       if (items?.isNotEmpty != true) return [];
-      List<Widget> optionWidgets = [];
-      optionWidgets.add(
-        row('$title: ', fontWeight: FontWeight.w500, leftPadding: leftPadding),
-      );
-      String tempString = "";
-      for (var item in items!) {
-        tempString += "${item.title}, ";
-      }
-      if (tempString.isNotEmpty) {
-        tempString = tempString.substring(0, tempString.length - 2);
-        optionWidgets.add(row(tempString, leftPadding: leftPadding));
-      }
+      final optionWidgets = <pw.Widget>[];
+      optionWidgets.add(row('$title: ', leftPadding: leftPadding));
 
+      final joined = items!.map((e) => e.title).join(', ');
+      if (joined.isNotEmpty) {
+        optionWidgets.add(row(joined, leftPadding: leftPadding));
+      }
       return optionWidgets;
     }
 
     for (int i = 0; i < items.length; i++) {
-      var item = items[i];
-
+      final item = items[i];
       final countStr = '${item.count}x';
 
       /// ITEM TITLE
@@ -646,192 +333,99 @@ abstract class DesignFunctions {
         // Mutfak fişi hariç diğer fiş türlerinde iptal edilen ürünler basılmaz.
         if (isItemCancelled && !printCancelItem) continue;
 
-        addTextWidget(
-          children,
-          'İptal Edildi',
-          fontSize: 34,
-          fontWeight: FontWeight.w700,
+        children.add(
+          pw.SizedBox(
+            width: paperWidth - _horizontalPadding * 2,
+            child: pw.Text(
+              'İptal Edildi',
+              textAlign: pw.TextAlign.center,
+              style: const pw.TextStyle(fontSize: 34, fontWeight: pw.FontWeight.bold, height: 1.2),
+            ),
+          ),
         );
       }
 
-      /// item Title - Price -----------------------------------------------
-      Widget? price;
+      /// item Title - Price
+      pw.Widget? price;
       if (isPriceVisible == true && item.totalPrice != null) {
-        price = PriceTextWidget(
-          direction: Axis.vertical,
-          textDirection: TextDirection.rtl,
+        price = _priceWidget(
           price: item.totalPrice!,
           discountPrice:
               item.afterManualDiscountItemPrice ?? (item.isUseCampaign == true ? item.beforeCampaignItemPrice : null),
           isComplimentary: item.manualDiscountTypeId == ManuelDiscountType.giveaway.discountType,
-          textHeight: 1,
         );
       }
 
-      children.add(
-        row('$countStr${item.itemTitle!}', col2Widget: price, fontWeight: FontWeight.w700),
-      );
-      children.add(const SizedBox(height: 10));
+      children.add(row('$countStr${item.itemTitle!}', col2Widget: price, fontWeight: pw.FontWeight.bold));
+      children.add(pw.SizedBox(height: 10));
 
-      /// options -----------------------------------------------
+      /// options
       if (item.options != null) {
-        /// PRODUCT -----------------------------------------------
         if (item.itemTypeId == ItemType.PRODUCT.name) {
-          /// options ----------------------------------------------
-          for (var option in item.options!) {
+          for (final option in item.options!) {
             if (option.items?.isNotEmpty == true) {
-              /// options item -----------------------------------------------
-              children.addAll(
-                addOption(option.title!, option.items, countStr.length * 8),
-              );
-
-              children.add(const SizedBox(height: 10));
+              children.addAll(addOption(option.title!, option.items, countStr.length * 8));
+              children.add(pw.SizedBox(height: 10));
             }
           }
         } else if (item.itemTypeId == ItemType.PROMOTION_MENU.name) {
-          /// PROMOTION_MENU -----------------------------------------------
-          for (var option in item.options!) {
-            /// section title -----------------------------------------------
-            children.add(row(
-              '-${option.sectionTitle!}:',
-              fontWeight: FontWeight.w500,
-              leftPadding: countStr.length * 8,
-            ));
+          for (final option in item.options!) {
+            /// section title
+            children.add(row('-${option.sectionTitle!}:', leftPadding: countStr.length * 8));
 
-            /// section product name -----------------------------------------------
-            children.add(row(
-              option.sectionItem!.productName!,
-              leftPadding: (countStr.length + 3) * 8,
-            ));
+            /// section product name
+            children.add(row(option.sectionItem!.productName!, leftPadding: (countStr.length + 3) * 8));
 
-            /// options -----------------------------------------------
-            for (var sectionOption in option.sectionItem!.options!) {
-              /// options item -----------------------------------------------
-              children.addAll(
-                addOption(sectionOption.title!, sectionOption.items, (countStr.length + 3) * 8),
-              );
+            /// options
+            for (final sectionOption in option.sectionItem!.options!) {
+              children.addAll(addOption(sectionOption.title!, sectionOption.items, (countStr.length + 3) * 8));
             }
-            children.add(const SizedBox(height: 10));
+            children.add(pw.SizedBox(height: 10));
           }
         }
       }
 
-/*      /// item payment type -----------------------------------------------
-      if (item.paymentTypeId != null) {
-        _row('Ödeme Tipi:', item.paymentTypeId, fontWeight: FontWeight.w700);
-      }*/
-
-      /// item Note -----------------------------------------------
+      /// item Note
       if (item.itemNote?.isNotEmpty == true) {
         children.add(row(
           'Ürün Notu: ${item.itemNote!}',
-          fontWeight: FontWeight.w700,
+          fontWeight: pw.FontWeight.bold,
           leftPadding: countStr.length * 8,
         ));
       }
 
-      if (i != items.length - 1) children.add(const SizedBox(height: 18));
+      if (i != items.length - 1) children.add(pw.SizedBox(height: 18));
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: children,
-    );
-  }
-
-  void addPaymentDetail(List<int> byte, PrinterQueueResponsePrintDataModel printData) {
-    /// tip amount ------------------------------------------------------------------
-    if (printData.totalTipAmount != null && printData.totalTipAmount != 0) {
-      final totalTipAmount = '${printData.totalTipAmount?.toStringAsFixed(2)}TL';
-      byte.addAll(
-        generator.row([
-          PosColumn(
-            width: 12,
-            text: _createTowColumn('Bahşiş: ', totalTipAmount),
-            styles: const PosStyles(
-              align: PosAlign.left,
-              width: PosTextSize.size1,
-              bold: true,
-            ),
-          ),
-        ]),
-      );
-    }
-
-    /// service to table amount ------------------------------------------------------------------
-    if (printData.tableServiceAmount != null && printData.tableServiceAmount != 0) {
-      final tableServiceAmount = '${printData.tableServiceAmount?.toStringAsFixed(2)}TL';
-      byte.addAll(
-        generator.row([
-          PosColumn(
-            width: 12,
-            text: _createTowColumn('Masaya Servis: ', tableServiceAmount),
-            styles: const PosStyles(
-              align: PosAlign.left,
-              width: PosTextSize.size1,
-              bold: true,
-            ),
-          ),
-        ]),
-      );
-    }
-
-    /// total amount ------------------------------------------------------------------
-    final double totalAmount;
-    if (printData.orders!.first.orderPointId == OrderPoint.TABLE.name) {
-      totalAmount = printData.serviceTotalAmount!;
-    } else {
-      totalAmount = printData.orders!.first.totalAmount!;
-    }
-    byte.addAll(
-      generator.row([
-        PosColumn(
-          width: 12,
-          text: _createTowColumn('TOPLAM TUTAR: ', '${totalAmount.toStringAsFixed(2)}TL'),
-          styles: const PosStyles(
-            align: PosAlign.left,
-            width: PosTextSize.size1,
-            bold: true,
-          ),
-        ),
-      ]),
+    return pw.SizedBox(
+      width: paperWidth - _horizontalPadding * 2,
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: children,
+      ),
     );
   }
 
   void addPaymentDetailWidget(
-    List<Widget> widgetList,
+    List<pw.Widget> widgetList,
     PrinterQueueResponsePrintDataModel printData,
   ) {
-    /// tip amount ------------------------------------------------------------------
+    /// tip amount
     if (printData.totalTipAmount != null && printData.totalTipAmount != 0) {
-      final totalTipAmount = '${printData.totalTipAmount?.toStringAsFixed(2)}TL';
-
       widgetList.add(
-        addRowWidget(
-          flex1: 3,
-          flex2: 2,
-          'BAHŞİŞ:',
-          totalTipAmount,
-        ),
+        addRowWidget(flex1: 3, flex2: 2, 'BAHŞİŞ:', '${printData.totalTipAmount?.toStringAsFixed(2)}TL'),
       );
     }
 
-    /// service to table amount ------------------------------------------------------------------
+    /// service to table amount
     if (printData.tableServiceAmount != null && printData.tableServiceAmount != 0) {
-      final tableServiceAmount = '${printData.tableServiceAmount?.toStringAsFixed(2)}TL';
-
       widgetList.add(
-        addRowWidget(
-          flex1: 3,
-          flex2: 2,
-          'MASAYA SERVİS:',
-          tableServiceAmount,
-        ),
+        addRowWidget(flex1: 3, flex2: 2, 'MASAYA SERVİS:', '${printData.tableServiceAmount?.toStringAsFixed(2)}TL'),
       );
     }
 
-    /// indirim ------------------------------------------------------------------
-    final List<Widget> discounts = [];
+    /// indirim
+    final List<pw.Widget> discounts = [];
     for (int i = 0; i < printData.orders!.length; i++) {
       final order = printData.orders![i];
       final campaign = order.campaigns!.firstOrNull;
@@ -847,15 +441,9 @@ abstract class DesignFunctions {
         );
       }
 
-      final discount = order.discounts!.firstWhereOrNull((e) => e.isActive == true);
-      if (discount != null) {
+      if ([ManuelDiscountType.noDiscount.discountType, null].contains(order.manualDiscountTypeId) == false) {
         discounts.add(
-          addRowWidget(
-            flex1: 3,
-            flex2: 2,
-            'İNDİRİM TUTARI:',
-            '-${discount.manualDiscountAmount?.getPrice()}',
-          ),
+          addRowWidget(flex1: 3, flex2: 2, 'İNDİRİM TUTARI:', '-${order.totalManualDiscount?.getPrice()}'),
         );
       }
     }
@@ -872,7 +460,7 @@ abstract class DesignFunctions {
       widgetList.addAll(discounts);
     }
 
-    /// total amount ------------------------------------------------------------------
+    /// total amount
     widgetList.add(
       addRowWidget(
         flex1: 3,
@@ -886,293 +474,58 @@ abstract class DesignFunctions {
     );
   }
 
-  void addFooter(List<int> byte, PrinterQueueDealerInfoModel? dealerIndo) {
-    /// dealer name ------------------------------------------------------------------
-    byte.addAll(
-      generator.row([
-        PosColumn(width: 1, text: '', styles: const PosStyles(align: PosAlign.left)),
-        PosColumn(
-          width: 10,
-          text: (dealerIndo?.dealerName ?? SipPrinter.instance.headerTitle).toString().withoutDiacriticalMarks(),
-          styles: const PosStyles(
-            align: PosAlign.center,
-            width: PosTextSize.size1,
-            bold: true,
-          ),
-        ),
-        PosColumn(width: 1, text: '', styles: const PosStyles(align: PosAlign.left)),
-      ]),
-    );
-
-    /// dealer address ------------------------------------------------------------------
-    byte.addAll(
-      generator.row([
-        PosColumn(width: 1, text: '', styles: const PosStyles(align: PosAlign.left)),
-        PosColumn(
-          width: 10,
-          text: (dealerIndo?.address ?? SipPrinter.instance.footerTitle).toString().withoutDiacriticalMarks(),
-          styles: const PosStyles(
-            align: PosAlign.center,
-            width: PosTextSize.size1,
-            bold: true,
-          ),
-        ),
-        PosColumn(width: 1, text: '', styles: const PosStyles(align: PosAlign.left)),
-      ]),
-    );
-  }
-
   void addFooterWidget(
-    List<Widget> widgetList,
+    List<pw.Widget> widgetList,
     PrinterQueueDealerInfoModel? dealerInfo,
   ) {
-    /// dealer name ------------------------------------------------------------------
+    /// dealer name
     addTextWidget(
       widgetList,
       (dealerInfo?.dealerName ?? SipPrinter.instance.headerTitle).toString(),
       fontSize: 34,
-      fontWeight: FontWeight.w600,
+      fontWeight: pw.FontWeight.bold,
     );
 
-    /// dealer address ------------------------------------------------------------------
+    /// dealer address
     addTextWidget(
       widgetList,
       (dealerInfo?.address ?? SipPrinter.instance.footerTitle).toString(),
       fontSize: 34,
-      fontWeight: FontWeight.w600,
+      fontWeight: pw.FontWeight.bold,
     );
   }
 
-  void addEmptyLines(List<int> byte) {
-    byte.addAll(generator.emptyLines(1));
-  }
-
-  void addEmptyLinesWidget(List<Widget> list, {int count = 1}) {
-    list.addAll(List.generate(count, (_) => const Text('')));
-  }
-
-  void addCenterText(
-    List<int> byte,
-    String title, {
-    PosTextSize height = PosTextSize.size1,
-    PosTextSize width = PosTextSize.size1,
-  }) {
-    /// slip title ------------------------------------------------------------------
-    byte.addAll(
-      generator.row([
-        PosColumn(width: 1, text: '', styles: const PosStyles(align: PosAlign.left)),
-        PosColumn(
-          width: 10,
-          text: title.withoutDiacriticalMarks(),
-          styles: PosStyles(
-            align: PosAlign.center,
-            bold: true,
-            width: width,
-            height: height,
-          ),
-        ),
-        PosColumn(width: 1, text: '', styles: const PosStyles(align: PosAlign.left)),
-      ]),
-    );
-  }
-
-  void addTextWidget(
-    List<Widget> list,
-    String title, {
-    double? fontSize = 32,
-    FontWeight? fontWeight,
-    TextAlign textAlign = TextAlign.center,
-  }) {
-    list.add(
-      Text(
-        title,
-        style: TextStyle(
-          fontSize: fontSize,
-          fontFamily: fontFamily,
-          fontWeight: fontWeight,
-          height: 1.2,
-        ),
-        textAlign: textAlign,
-      ),
-    );
-  }
-
-  void cut(List<int> byte) {
-    byte.addAll(generator.cut(mode: PosCutMode.partial));
-  }
-
-  PosTextSize getSize(String? size) {
-    if (size == PrinterFontSizeEnum.XL.name) {
-      return PosTextSize.size5;
-    } else if (size == PrinterFontSizeEnum.LG.name) {
-      return PosTextSize.size4;
-    } else if (size == PrinterFontSizeEnum.MD.name) {
-      return PosTextSize.size3;
-    } else if (size == PrinterFontSizeEnum.SM.name) {
-      return PosTextSize.size2;
-    } else {
-      return PosTextSize.size1;
-    }
-  }
-
-  double getSizeWidget(String? size) {
-    if (size == PrinterFontSizeEnum.XL.name) {
-      return 20;
-    } else if (size == PrinterFontSizeEnum.LG.name) {
-      return 18;
-    } else if (size == PrinterFontSizeEnum.MD.name) {
-      return 16;
-    } else if (size == PrinterFontSizeEnum.SM.name) {
-      return 14;
-    } else {
-      return 12;
-    }
-  }
-
-  /// tek satırda iki sütün oluşturur
-  String _createTowColumn(String col1, String col2) =>
-      (col1 + (' ' * (maxLineCharacterCount - col2.length - col1.length)) + col2).withoutDiacriticalMarks();
-
-  /// Sütün de kullanılmakta, verilen metini sola hizalar
-  /// ratio: istenilen sütünün weghit i
-  /// col2: sütünde gösterilen metin
-  String _createColumnAndAlignLeft(int ratio, String col2) =>
-      ((' ' * (((maxLineCharacterCount / 12) * ratio) - col2.length).truncate()) + col2).withoutDiacriticalMarks();
-
-  void addSeparator(List<int> byte) {
-    byte.addAll(
-      generator.text(
-        '-' * maxLineCharacterCount,
-        styles: const PosStyles(align: PosAlign.left),
-      ),
-    );
-  }
-
-  void addSeparatorWidget(List<Widget> list) => list.add(
-        Text(
-          '---------------------------------------------------------',
-          style: TextStyle(
-            fontSize: 20,
-            fontFamily: fontFamily,
-            fontWeight: FontWeight.bold,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.clip,
-          textAlign: TextAlign.center,
-        ),
-      );
-
-  List<String> _orderDetailFitter(String orderDetail, int maxLength) {
-    List<String> tempList = [""];
-    List<String> productWordsList = orderDetail.split(" ");
-    for (int i = 0; i < productWordsList.length; i++) {
-      final tempStr = "${tempList.last} ${productWordsList[i]}".trim();
-      if (tempStr.length <= maxLength) {
-        tempList.last = tempStr;
-      } else {
-        tempList.add(productWordsList[i]);
-      }
-    }
-    return tempList;
-  }
-
-  void addTowColumn(List<int> byte, String col1, String col2) {
-    byte.addAll(
-      generator.row([
-        PosColumn(
-          width: 12,
-          text: _createTowColumn(col1, col2),
-          styles: const PosStyles(
-            align: PosAlign.left,
-            width: PosTextSize.size1,
-            height: PosTextSize.size1,
-            bold: true,
-          ),
-        ),
-      ]),
-    );
-  }
-
-  /// tek satırda iki sütun oluşturur
-  void addTowColumnWidget(
-    List<Widget> widgetList,
-    String col1,
-    String col2,
-  ) =>
-      widgetList.add(addRowWidget(col1, col2));
-
-  Future<void> addInvoiceQRLink(List<int> byte, String link) async {
-    await addQR(byte, link);
-    byte.addAll(
-      generator.text(
-        'E-Belgeye erişmek için'.withoutDiacriticalMarks(),
-        styles: const PosStyles(align: PosAlign.center),
-      ),
-    );
-    byte.addAll(
-      generator.text(
-        'yukarıdaki QR kodu okutunuz.'.withoutDiacriticalMarks(),
-        styles: const PosStyles(align: PosAlign.center),
-      ),
-    );
-  }
-
-  void addInvoiceQRLinkWidget(List<Widget> widgetList, String link) {
+  void addInvoiceQRLinkWidget(List<pw.Widget> widgetList, String link) {
     try {
       widgetList.add(
-        Align(
-          alignment: Alignment.center,
-          child: QrImageView(
-            padding: const EdgeInsets.all(15),
-            data: link,
-            version: QrVersions.auto,
-            size: 300,
+        pw.Center(
+          child: pw.Padding(
+            padding: const pw.EdgeInsets.all(15),
+            child: pw.BarcodeWidget(
+              barcode: pw.Barcode.qrCode(),
+              data: link,
+              width: 300,
+              height: 300,
+              drawText: false,
+            ),
           ),
         ),
       );
 
-      addTextWidget(widgetList, 'E-Belgeye erişmek için', fontSize: 34, fontWeight: FontWeight.w700);
-      addTextWidget(widgetList, 'yukarıdaki QR kodu okutunuz.', fontSize: 34, fontWeight: FontWeight.w700);
+      addTextWidget(widgetList, 'E-Belgeye erişmek için', fontSize: 34, fontWeight: pw.FontWeight.bold);
+      addTextWidget(widgetList, 'yukarıdaki QR kodu okutunuz.', fontSize: 34, fontWeight: pw.FontWeight.bold);
     } catch (e) {
-      addTextWidget(
-        widgetList,
-        link,
-        fontSize: 34,
-        fontWeight: FontWeight.w700,
-      );
+      addTextWidget(widgetList, link, fontSize: 34, fontWeight: pw.FontWeight.bold);
     }
   }
 
-  Future<void> addQR(List<int> byte, String link, {double size = 300}) async {
+  Future<void> add3PartLogoWidget(
+    List<pw.Widget> widgetList,
+    String? clientPointId,
+  ) async {
     try {
-      /// ilk qr kodu düzgün çıkartmadığı için ilk önce küçük bir qr code basıyoruz
-      final tempUiImg = await QrPainter(
-        data: link,
-        version: QrVersions.auto,
-        gapless: true,
-      ).toImageData(2);
-      byte.addAll(generator.image(img.decodeImage(tempUiImg!.buffer.asUint8List())!));
+      final is3PartOrder = ThirdPartClientPointId.values.firstWhereOrNull((e) => e.name == clientPointId);
 
-      final uiImg = await QrPainter(
-        data: link,
-        version: QrVersions.auto,
-        gapless: true,
-      ).toImageData(size);
-      final image = img.decodeImage(uiImg!.buffer.asUint8List());
-      byte.addAll(generator.image(image!));
-    } catch (e) {
-      byte.addAll(
-        generator.text(
-          link.withoutDiacriticalMarks(),
-          styles: const PosStyles(align: PosAlign.center),
-        ),
-      );
-    }
-  }
-
-  Future<void> add3PartLogo(List<int> byte, String? clientPointId) async {
-    final is3PartOrder = ThirdPartClientPointId.values.firstWhereOrNull((e) => e.name == clientPointId);
-    try {
       final String assetsPath;
       switch (is3PartOrder) {
         case ThirdPartClientPointId.MIGROSYEMEK:
@@ -1191,53 +544,12 @@ abstract class DesignFunctions {
           return;
       }
 
-      final ByteData data = await rootBundle.load(assetsPath);
-      final Uint8List imageBytes = data.buffer.asUint8List();
-      final decodedImage = img.decodeImage(imageBytes)!;
-      final grayscaleImage = img.grayscale(decodedImage);
-      final imageRaster = generator.imageRaster(grayscaleImage, align: PosAlign.center);
-      byte.addAll(imageRaster);
-    } catch (e) {
-      addReceiptTitle(byte, clientPointId!);
-    }
-  }
-
-  Future<void> add3PartLogoWidget(
-    List<Widget> widgetList,
-    String? clientPointId,
-  ) async {
-    try {
-      final is3PartOrder = ThirdPartClientPointId.values.firstWhereOrNull((e) => e.name == clientPointId);
-      String? assetsPath;
-      switch (is3PartOrder) {
-        case ThirdPartClientPointId.MIGROSYEMEK:
-          assetsPath = 'assets/logo/migrosyemek_logo.jpg';
-          break;
-        case ThirdPartClientPointId.GETIR:
-          assetsPath = 'assets/logo/getiryemek_logo.jpg';
-          break;
-        case ThirdPartClientPointId.TRENDYOL:
-          assetsPath = 'assets/logo/trendyolyemek_logo.jpg';
-          break;
-        case ThirdPartClientPointId.YEMEKSEPETI:
-          assetsPath = 'assets/logo/yemeksepeti_logo.jpg';
-          break;
-        default:
-          return;
-      }
-
-      final provider = ExactAssetImage(
-        assetsPath,
-        package: 'sip_printer',
-      );
-
-      await _loadImage(provider);
+      final data = await rootBundle.load(assetsPath).timeout(const Duration(seconds: 3));
+      final logo = pw.MemoryImage(data.buffer.asUint8List());
 
       widgetList.add(
-        Image(
-          image: provider,
-          width: 100,
-          fit: BoxFit.scaleDown,
+        pw.Center(
+          child: pw.Image(logo, width: 100, fit: pw.BoxFit.scaleDown),
         ),
       );
     } catch (e) {
@@ -1247,203 +559,174 @@ abstract class DesignFunctions {
     }
   }
 
-  Future<void> _loadImage(ImageProvider provider) async {
-    final completer = Completer<void>();
-
-    final stream = provider.resolve(
-      const ImageConfiguration(),
-    );
-
-    late final ImageStreamListener listener;
-
-    listener = ImageStreamListener(
-      (ImageInfo image, bool synchronousCall) {
-        stream.removeListener(listener);
-
-        if (!completer.isCompleted) {
-          completer.complete();
-        }
-      },
-      onError: (Object error, StackTrace? stackTrace) {
-        stream.removeListener(listener);
-
-        if (!completer.isCompleted) {
-          completer.completeError(error, stackTrace);
-        }
-      },
-    );
-
-    stream.addListener(listener);
-
-    try {
-      await completer.future.timeout(const Duration(seconds: 3));
-    } finally {
-      stream.removeListener(listener);
+  double getSizeWidget(String? size) {
+    if (size == PrinterFontSizeEnum.XL.name) {
+      return 20;
+    } else if (size == PrinterFontSizeEnum.LG.name) {
+      return 18;
+    } else if (size == PrinterFontSizeEnum.MD.name) {
+      return 16;
+    } else if (size == PrinterFontSizeEnum.SM.name) {
+      return 14;
+    } else {
+      return 12;
     }
   }
 
-  addRowWidget(
-    String col1,
-    String col2, {
-    int flex1 = 5,
-    int flex2 = 6,
-    int? col1MaxLines,
-  }) =>
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: flex1,
-            child: Text(
-              col1,
-              style: TextStyle(
-                fontSize: 32,
-                fontFamily: fontFamily,
-                fontWeight: FontWeight.w500,
-                height: 1.2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              maxLines: col1MaxLines,
-            ),
-          ),
-          Expanded(
-            flex: flex2,
-            child: Text(
-              col2,
-              style: TextStyle(
-                fontSize: 32,
-                fontFamily: fontFamily,
-                fontWeight: FontWeight.w500,
-                height: 1.2,
-              ),
-              textAlign: TextAlign.right,
-            ),
-          ),
-        ],
-      );
+  Future<(List<int>, img.Image)> createImageAndConvert(List<pw.Widget> widgets) async {
+    final watch = Stopwatch()..start();
+    print('createImageAndConvert: START');
 
-  Future<(List<int>, img.Image)> createImageAndConvert(
-    Widget widget,
-  ) async {
-    final total = Stopwatch()..start();
+    final pdfBytes = await buildPdf(widgets);
+    print('createImageAndConvert: buildPdf = ${watch.elapsedMilliseconds} ms');
 
-    debugPrint('PRINT: START');
+    watch.reset();
+    final image = await pdfToImage(pdfBytes);
+    print('createImageAndConvert: pdfToImage = ${watch.elapsedMilliseconds} ms');
 
-    final imageWatch = Stopwatch()..start();
-
-    final image = await _createImageFromWidget(widget);
-
-    debugPrint(
-      'PRINT: createImageFromWidget = '
-      '${imageWatch.elapsedMilliseconds} ms',
-    );
-
-    final convertWatch = Stopwatch()..start();
-
+    watch.reset();
     final bytes = _convertImageToByteAndCut(image);
-
-    debugPrint(
-      'PRINT: convertImageToByteAndCut = '
-      '${convertWatch.elapsedMilliseconds} ms',
-    );
-
-    debugPrint(
-      'PRINT: TOTAL = '
-      '${total.elapsedMilliseconds} ms | '
-      'bytes=${bytes.length}',
-    );
+    print('createImageAndConvert: ${watch.elapsedMilliseconds} ms | bytes=${bytes.length}');
 
     return (bytes, image);
   }
 
-  Future<img.Image> _createImageFromWidget(Widget widget) async {
-    final total = Stopwatch()..start();
-
-    final repaintBoundary = RenderRepaintBoundary();
-    final pipelineOwner = PipelineOwner();
-    final buildOwner = BuildOwner(
-      focusManager: FocusManager(),
-    );
-
-    print('PRINT W: create render objects: ${total.elapsedMilliseconds} ms');
-
-    final renderView = RenderView(
-      view: WidgetsBinding.instance.platformDispatcher.views.first,
-      child: RenderPositionedBox(
-        alignment: Alignment.center,
-        child: repaintBoundary,
-      ),
-      configuration: const ViewConfiguration(
-        logicalConstraints: BoxConstraints(
-          maxWidth: 576,
-          minWidth: 576,
-        ),
-        physicalConstraints: BoxConstraints(
-          maxWidth: 576,
-          minWidth: 576,
-        ),
-        devicePixelRatio: 3.0,
+  Future<Uint8List> buildPdf(List<pw.Widget> widgets) async {
+    final doc = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: SipPrinter.instance.regularFont,
+        bold: SipPrinter.instance.boldFont,
       ),
     );
 
-    pipelineOwner.rootNode = renderView;
-    renderView.prepareInitialFrame();
-
-    final rootElement = RenderObjectToWidgetAdapter<RenderBox>(
-      container: repaintBoundary,
-      child: Directionality(
-        textDirection: TextDirection.ltr,
-        child: Material(
-          child: widget,
+    doc.addPage(
+      pw.Page(
+        // height: infinity => sayfa içeriğin yüksekliğine göre uzar (rulo kağıt)
+        pageFormat: PdfPageFormat(paperWidth, double.infinity, marginAll: 0),
+        margin: const pw.EdgeInsets.symmetric(horizontal: _horizontalPadding, vertical: 8),
+        build: (_) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: widgets,
         ),
       ),
-    ).attachToRenderTree(buildOwner);
-
-    buildOwner.buildScope(rootElement);
-    buildOwner.finalizeTree();
-
-    print('PRINT W: build = ${total.elapsedMilliseconds} ms');
-
-    pipelineOwner.flushLayout();
-
-    print('PRINT W: layout = ${total.elapsedMilliseconds} ms');
-
-    pipelineOwner.flushCompositingBits();
-    pipelineOwner.flushPaint();
-
-    print('PRINT W: paint = ${total.elapsedMilliseconds} ms');
-
-    final image = await repaintBoundary.toImage();
-
-    print(
-      'PRINT W: toImage = ${total.elapsedMilliseconds} ms '
-      '${image.width}x${image.height}',
     );
 
-    final byteData = await image.toByteData(format: ImageByteFormat.png);
-
-    print(
-      'PRINT W: PNG encode = ${total.elapsedMilliseconds} ms '
-      '${byteData?.lengthInBytes} bytes',
-    );
-
-    final bytes = byteData!.buffer.asUint8List();
-
-    final result = img.decodeImage(bytes)!;
-
-    print('PRINT W: PNG decode = ${total.elapsedMilliseconds} ms');
-
-    print('PRINT W: TOTAL IMAGE = ${total.elapsedMilliseconds} ms');
-
-    return result;
+    return doc.save();
   }
 
   List<int> _convertImageToByteAndCut(img.Image image) {
-    List<int> byte = [];
-    byte += generator.image(image);
-    byte += generator.cut();
-    byte += generator.beep(n: 1, duration: PosBeepDuration.beep300ms);
+    final watch = Stopwatch()..start();
 
-    return byte;
+    final bytes = <int>[];
+    bytes.addAll(imageToEscPosRaster(image));
+
+    print(
+      'generator.image: ${watch.elapsedMilliseconds} ms',
+    );
+
+    watch
+      ..reset()
+      ..start();
+
+    // bytes.addAll(generator.cut());
+    /*
+    bytes.addAll(
+      generator.beep(
+        n: 1,
+        duration: PosBeepDuration.beep300ms,
+      ),
+    );
+*/
+
+    // cut
+    bytes.addAll([
+      0x1D, // GS
+      0x56, // V
+      0x30, // 0 = Full cut
+    ]);
+
+    // beep
+    bytes.addAll([0x1B, 0x42, 0x01, 0x06]);
+
+    print('cut + beep: ${watch.elapsedMilliseconds} ms');
+
+    return bytes;
+  }
+
+  Future<img.Image> pdfToImage(Uint8List pdfBytes) async {
+    final watch = Stopwatch()..start();
+
+    final raster = await Printing.raster(pdfBytes, dpi: _rasterDpi).first;
+    print('pdfToImage: 1 (${watch.elapsedMilliseconds} ms)');
+
+    watch.reset();
+    final pngBytes = await raster.toPng();
+    print('pdfToImage: 2 (${watch.elapsedMilliseconds} ms)');
+
+    watch.reset();
+    var image = img.decodeImage(pngBytes)!;
+    print('pdfToImage: 3 ${image.width}x${image.height} (${watch.elapsedMilliseconds} ms)');
+
+    watch.reset();
+    if (image.width != paperWidth.toInt()) {
+      image = img.copyResize(
+        image,
+        width: paperWidth.toInt(),
+        interpolation: img.Interpolation.cubic,
+      );
+    }
+    print('pdfToImage: 4 ${image.width}x${image.height} (${watch.elapsedMilliseconds} ms)');
+
+    return image;
+  }
+
+  /// [threshold]   : 0-255, bu değerden koyu pikseller siyah basılır.
+  /// [chunkHeight] : Bazı yazıcılar tek blokta çok yüksek resmi kabul etmez, bu yüzden parçalanır.
+  List<int> imageToEscPosRaster(
+    img.Image source, {
+    int threshold = 160,
+    int chunkHeight = 256,
+  }) {
+    final image = source.numChannels == 4 ? source : source.convert(numChannels: 4);
+
+    final width = image.width;
+    final height = image.height;
+    final widthBytes = (width + 7) >> 3;
+    final rgba = image.getBytes(order: img.ChannelOrder.rgba);
+
+    final out = BytesBuilder(copy: false);
+
+    for (int startY = 0; startY < height; startY += chunkHeight) {
+      final h = (startY + chunkHeight > height) ? height - startY : chunkHeight;
+
+      // GS v 0 m xL xH yL yH
+      out.add([
+        0x1D, 0x76, 0x30, 0x00, //
+        widthBytes & 0xFF, (widthBytes >> 8) & 0xFF,
+        h & 0xFF, (h >> 8) & 0xFF,
+      ]);
+
+      final block = Uint8List(widthBytes * h);
+
+      for (int y = 0; y < h; y++) {
+        final rowStart = (startY + y) * width * 4;
+        final blockRow = y * widthBytes;
+
+        for (int x = 0; x < width; x++) {
+          final i = rowStart + x * 4;
+          final a = rgba[i + 3];
+          if (a < 128) continue; // şeffaf = beyaz
+
+          final lum = (rgba[i] * 299 + rgba[i + 1] * 587 + rgba[i + 2] * 114) ~/ 1000;
+          if (lum < threshold) {
+            block[blockRow + (x >> 3)] |= 0x80 >> (x & 7);
+          }
+        }
+      }
+
+      out.add(block);
+    }
+
+    return out.takeBytes();
   }
 }

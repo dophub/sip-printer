@@ -1,117 +1,19 @@
 import 'dart:async';
 import 'dart:io';
-
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
-import 'package:flutter/foundation.dart';
 import 'package:print_usb/model/usb_device.dart';
 import 'package:print_usb/print_usb.dart';
-import 'package:sip_models/ri_enum.dart';
 import 'package:sip_models/ri_models.dart';
-import 'package:sip_printer/src/lib/thermal_printer/receipt_design/receipt_design.dart';
 import 'package:usb_printer/usb_printer.dart';
-import 'package:image/image.dart' as img show Image;
 import '../network/network_print_result.dart';
 import '../network/network_printer.dart';
 
 class ThermalPrinterManager {
-  final CapabilityProfile _profile;
-
   static ThermalPrinterManager? _instance;
 
-  ThermalPrinterManager._(this._profile);
+  ThermalPrinterManager._();
 
-  static FutureOr<ThermalPrinterManager> instance() async {
-    return _instance ??= ThermalPrinterManager._(await CapabilityProfile.load());
-  }
-
-  /// Sipariş Fişi
-  Future<(List<int>, img.Image)> createReceiptForTable(
-      PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
-    try {
-      final type = _printerPaperTypeToPaperSize(paperSize);
-      return ReceiptDesign(Generator(type, _profile), type).createReceiptForTableWidget(printModel);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Gel Al
-  Future<(List<int>, img.Image)> createReceiptForGetIn(
-      PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
-    try {
-      final type = _printerPaperTypeToPaperSize(paperSize);
-      return ReceiptDesign(Generator(type, _profile), type).createReceiptForGetInWidget(printModel);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Paket Siparisi
-  Future<(List<int>, img.Image)> createReceiptForTakeout(
-    PrinterPaperTypeEnum paperSize,
-    PrinterQueueResponseModel printModel,
-  ) {
-    try {
-      final type = _printerPaperTypeToPaperSize(paperSize);
-      return ReceiptDesign(Generator(type, _profile), type).createReceiptForTakeoutWidget(printModel);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Kasa Fişi
-  Future<(List<int>, img.Image)> createReceiptForCashRegister(
-      PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
-    try {
-      final type = _printerPaperTypeToPaperSize(paperSize);
-      return ReceiptDesign(Generator(type, _profile), type).createReceiptForCashRegisterWidget(printModel);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Masa Adisyonu
-  Future<(List<int>, img.Image)> createReceiptForTableBill(
-      PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
-    try {
-      final type = _printerPaperTypeToPaperSize(paperSize);
-      return ReceiptDesign(Generator(type, _profile), type).createReceiptForTableBillWidget(printModel);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// print report
-  Future<(List<int>, img.Image)> createReceiptForReport(PrinterPaperTypeEnum paperSize, DailyReportModel printModel) {
-    try {
-      final type = _printerPaperTypeToPaperSize(paperSize);
-      return ReceiptDesign(Generator(type, _profile), type).createReceiptForReportWidget(printModel);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// print kitchen order
-  Future<(List<int>, img.Image)> createReceiptForKitchenOrder(
-    PrinterPaperTypeEnum paperSize,
-    PrinterQueueResponseModel printModel,
-  ) async {
-    try {
-      final type = _printerPaperTypeToPaperSize(paperSize);
-      return await ReceiptDesign(Generator(type, _profile), type).createReceiptForKitchenByWidget(printModel);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  Future<(List<int>, img.Image)> createReceiptForTest(PrinterPaperTypeEnum paperSize) {
-    try {
-      final type = _printerPaperTypeToPaperSize(paperSize);
-      return ReceiptDesign(Generator(type, _profile), type).testTicketWidget();
-    } catch (e) {
-      debugPrint(e.toString());
-      rethrow;
-    }
+  factory ThermalPrinterManager.instance() {
+    return _instance ??= ThermalPrinterManager._();
   }
 
   Future<void> print(IPrinterModel config, List<int> bytes) async {
@@ -163,15 +65,6 @@ class ThermalPrinterManager {
     } else {
       final list = await UsbPrinter().getUSBDeviceList();
       return USBPrinterModel().jsonParserByMap(list);
-    }
-  }
-
-  PaperSize _printerPaperTypeToPaperSize(PrinterPaperTypeEnum type) {
-    switch (type) {
-      case PrinterPaperTypeEnum.mm58:
-        return PaperSize.mm58;
-      case PrinterPaperTypeEnum.mm80:
-        return PaperSize.mm80;
     }
   }
 }

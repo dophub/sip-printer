@@ -1,33 +1,16 @@
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:sip_models/ri_enum.dart';
 import 'package:sip_models/ri_models.dart';
 import 'package:sip_printer/sip_printer.dart';
-import 'package:image/image.dart' as img show Image, encodePng;
+import 'package:image/image.dart' as img show encodePng;
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  @override
-  void initState() {
-    super.initState();
-    SipPrinter.init(
-      languageCode: 'tr',
-      priceUnit: 'TL',
-      headerTitle: 'Deneme İşletme',
-      footerTitle: 'Deneme İşletme Adres',
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,47 +32,57 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late Future<Uint8List> _future;
+  Future<Uint8List>? _future;
   bool _isLoading = false;
+  final printerManager = ThermalPrinterManager.instance();
+  final receiptDesign = ReceiptDesign(PrinterPaperTypeEnum.mm80);
 
   @override
   void initState() {
     super.initState();
-    _future = _createReceipt('cashRegister');
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await SipPrinter.init(
+        languageCode: 'tr',
+        priceUnit: 'TL',
+        headerTitle: 'Deneme İşletme',
+        footerTitle: 'Deneme İşletme Adres',
+      );
+      _future = _createReceipt('cashRegister');
+      setState(() {});
+    });
   }
 
   Future<Uint8List> _createReceipt(String type) async {
-    final printerManager = await ThermalPrinterManager.instance();
-
     final order = PrinterQueueResponseModel().jsonParserByMap(orderMap);
 
     switch (type) {
       case 'table':
-        final result = await printerManager.createReceiptForTable(PrinterPaperTypeEnum.mm80, order);
+        final result = await receiptDesign.createReceiptForTable(order);
         return Uint8List.fromList(img.encodePng(result.$2));
 
       case 'getIn':
-        final result = await printerManager.createReceiptForGetIn(PrinterPaperTypeEnum.mm80, order);
+        final result = await receiptDesign.createReceiptForGetIn(order);
         return Uint8List.fromList(img.encodePng(result.$2));
 
       case 'takeout':
-        final result = await printerManager.createReceiptForTakeout(PrinterPaperTypeEnum.mm80, order);
+        final result = await receiptDesign.createReceiptForTakeout(order);
         return Uint8List.fromList(img.encodePng(result.$2));
 
       case 'cashRegister':
-        final result = await printerManager.createReceiptForCashRegister(PrinterPaperTypeEnum.mm80, order);
+        final result = await receiptDesign.createReceiptForCashRegister(order);
         return Uint8List.fromList(img.encodePng(result.$2));
 
       case 'tableBill':
-        final result = await printerManager.createReceiptForTableBill(PrinterPaperTypeEnum.mm80, order);
+        final result = await receiptDesign.createReceiptForTableBill(order);
         return Uint8List.fromList(img.encodePng(result.$2));
 
       case 'kitchen':
-        final result = await printerManager.createReceiptForKitchenOrder(PrinterPaperTypeEnum.mm80, order);
+        final result = await receiptDesign.createReceiptForKitchenOrder(order);
         return Uint8List.fromList(img.encodePng(result.$2));
 
       case 'test':
-        final result = await printerManager.createReceiptForTest(PrinterPaperTypeEnum.mm80);
+        final result = await receiptDesign.createReceiptForTest();
         return Uint8List.fromList(img.encodePng(result.$2));
 
       default:
@@ -106,7 +99,6 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       await _future;
     } catch (_) {
-      // Hata FutureBuilder içerisinde gösterilecek.
     } finally {
       if (mounted) {
         setState(() {
@@ -145,24 +137,26 @@ class _MyHomePageState extends State<MyHomePage> {
 
           Expanded(
             child: SingleChildScrollView(
-              child: FutureBuilder<Uint8List>(
-                future: _future,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
-                  }
+              child: _future == null
+                  ? const SizedBox()
+                  : FutureBuilder<Uint8List>(
+                      future: _future,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        }
 
-                  if (snapshot.hasError) {
-                    return Text('Hata: ${snapshot.error}');
-                  }
+                        if (snapshot.hasError) {
+                          return Text('Hata: ${snapshot.error}');
+                        }
 
-                  if (!snapshot.hasData) {
-                    return const Text('Resim oluşturulamadı');
-                  }
+                        if (!snapshot.hasData) {
+                          return const Text('Resim oluşturulamadı');
+                        }
 
-                  return Image.memory(snapshot.data!, fit: BoxFit.contain);
-                },
-              ),
+                        return Image.memory(snapshot.data!, fit: BoxFit.contain);
+                      },
+                    ),
             ),
           ),
         ],
@@ -172,473 +166,262 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 const orderMap = {
-  "id": 15537,
-  "trackid": "42d3f551-0095-4d11-8a07-bec316341fdc",
+  "id": 15541,
+  "trackid": "b8483b98-c9ec-449b-a73c-cbf84557b543",
   "print_data": {
     "orders": [
       {
-        "id": 18909,
+        "id": 18912,
         "items": [
           {
-            "id": 27725,
+            "id": 27735,
             "unit": {
               "id": "1c2168e9-8aa8-429d-945b-7a9e1b9cd1e9",
               "code": "ADET",
               "name": "Adet",
-              "has_decimal": false
+              "has_decimal": false,
             },
-            "count": 1,
-            "status": {
-              "status_code": "INKITCHEN",
-              "status_name": "HazÄ±rlanÄ±yor"
-            },
-            "is_gift": false,
+            "count": 2,
+            "status": {"status_code": "INKITCHEN", "status_name": "Hazırlanıyor"},
+            "is_gift": null,
             "options": [],
-            "discounts": [],
-            "item_code": "P-W-7713",
+            "discounts": [
+              {
+                "id": 763,
+                "source": "ITEM",
+                "is_active": true,
+                "locked_at": null,
+                "created_at": "2026-10-13T06:54:26.842089",
+                "order_item_id": 27735,
+                "deactivated_at": null,
+                "manual_discount_value": 0.0,
+                "manual_discount_amount": 890.0,
+                "manual_discount_type_id": 3,
+              },
+            ],
+            "item_code": "P-IK-7248",
             "item_note": "",
             "status_id": "INKITCHEN",
-            "item_price": 640.0,
-            "item_title": "Test1 640 - 20kdv",
-            "product_id": 7713,
-            "campaign_id": 242,
+            "item_price": 445.0,
+            "item_title": "Leaf Mushroom Burger",
+            "product_id": 7248,
+            "campaign_id": null,
             "cancel_note": null,
             "item_object": {
-              "id": 7713,
+              "id": 7248,
               "price": [
-                {
-                  "id": 42513,
-                  "price": 640.0,
-                  "is_default": false,
-                  "order_delivery_type_id": "TAKEOUT"
-                },
-                {
-                  "id": 42514,
-                  "price": 640.0,
-                  "is_default": true,
-                  "order_delivery_type_id": "TABLE"
-                },
-                {
-                  "id": 42515,
-                  "price": 640.0,
-                  "is_default": false,
-                  "order_delivery_type_id": "GETIN"
-                }
+                {"id": 41001, "price": 445.0, "is_default": false, "order_delivery_type_id": "TAKEOUT"},
+                {"id": 41002, "price": 445.0, "is_default": true, "order_delivery_type_id": "TABLE"},
+                {"id": 41003, "price": 445.0, "is_default": false, "order_delivery_type_id": "GETIN"},
               ],
               "images": null,
               "calorie": 0,
               "item_type": "PRODUCT",
               "make_time": 15,
-              "product_name": "Test1 640 - 20kdv",
-              "short_description": "Test2"
-            },
-            "tax_percent": 20,
-            "total_price": 640.0,
-            "item_type_id": "PRODUCT",
-            "payment_info": {
-              "name": "Nakit Ãdeme",
-              "type": "CASH",
-              "is_online_payment": false
-            },
-            "cancel_reject": null,
-            "order_main_id": 18909,
-            "stock_unit_id": "1c2168e9-8aa8-429d-945b-7a9e1b9cd1e9",
-            "transaction_id": "58e04615-5801-4ce0-a3e9-f4074412d7bc",
-            "is_use_campaign": true,
-            "revision_number": "536cd0ee-f24a-4a0b-ad5d-6e5bc1cd935d",
-            "printer_old_count": null,
-            "promotion_menu_id": null,
-            "before_campaign_total": 487.62,
-            "cancel_reject_code_id": null,
-            "manual_discount_value": 0.0,
-            "item_price_without_kdv": 406.35,
-            "manual_discount_amount": 7.62,
-            "manual_discount_type_id": 2,
-            "total_price_without_kdv": 406.35,
-            "order_pay_status_type_id": "SUCCESS",
-            "before_campaign_item_price": 487.62,
-            "after_manual_discount_total": 480.0,
-            "after_manual_discount_item_price": 480.0,
-            "after_manual_discount_total_without_kdv": 400.0,
-            "after_manual_discount_item_price_without_kdv": 400.0
-          },
-          {
-            "id": 27726,
-            "unit": {
-              "id": "1c2168e9-8aa8-429d-945b-7a9e1b9cd1e9",
-              "code": "ADET",
-              "name": "Adet",
-              "has_decimal": false
-            },
-            "count": 1,
-            "status": {
-              "status_code": "INKITCHEN",
-              "status_name": "HazÄ±rlanÄ±yor"
-            },
-            "is_gift": false,
-            "options": [],
-            "discounts": [],
-            "item_code": "P-W-7714",
-            "item_note": "",
-            "status_id": "INKITCHEN",
-            "item_price": 50.0,
-            "item_title": "Test1 50 - 10kdv",
-            "product_id": 7714,
-            "campaign_id": 242,
-            "cancel_note": null,
-            "item_object": {
-              "id": 7714,
-              "price": [
-                {
-                  "id": 42516,
-                  "price": 50.0,
-                  "is_default": false,
-                  "order_delivery_type_id": "TAKEOUT"
-                },
-                {
-                  "id": 42517,
-                  "price": 50.0,
-                  "is_default": true,
-                  "order_delivery_type_id": "TABLE"
-                },
-                {
-                  "id": 42518,
-                  "price": 50.0,
-                  "is_default": false,
-                  "order_delivery_type_id": "GETIN"
-                }
-              ],
-              "images": null,
-              "calorie": 0,
-              "item_type": "PRODUCT",
-              "make_time": 15,
-              "product_name": "Test1 50 - 10kdv",
-              "short_description": "test3"
+              "product_name": "Leaf Mushroom Burger",
+              "short_description": "Yarı brioche ekmek, burger eti, köz sarımsaklı el yapımı mayonez, terayağı ile pişmiş istiridye mantarı, cheddar peyniri. Churros patates kızartması ile",
             },
             "tax_percent": 10,
-            "total_price": 50.0,
+            "total_price": 890.0,
             "item_type_id": "PRODUCT",
-            "payment_info": {
-              "name": "Nakit Ãdeme",
-              "type": "CASH",
-              "is_online_payment": false
-            },
+            "payment_info": null,
             "cancel_reject": null,
-            "order_main_id": 18909,
+            "order_main_id": 18912,
             "stock_unit_id": "1c2168e9-8aa8-429d-945b-7a9e1b9cd1e9",
-            "transaction_id": "58e04615-5801-4ce0-a3e9-f4074412d7bc",
-            "is_use_campaign": true,
-            "revision_number": "7cf070c9-ef9a-4218-9ba4-5ba0634523ce",
+            "transaction_id": null,
+            "is_use_campaign": null,
+            "revision_number": "5a90bbe9-60de-4004-a7ef-7b5e2da12c2d",
             "printer_old_count": null,
             "promotion_menu_id": null,
-            "before_campaign_total": 38.1,
+            "before_campaign_total": null,
             "cancel_reject_code_id": null,
             "manual_discount_value": 0.0,
-            "item_price_without_kdv": 34.64,
-            "manual_discount_amount": 0.6,
-            "manual_discount_type_id": 2,
-            "total_price_without_kdv": 34.64,
-            "order_pay_status_type_id": "SUCCESS",
-            "before_campaign_item_price": 38.1,
-            "after_manual_discount_total": 37.5,
-            "after_manual_discount_item_price": 37.5,
-            "after_manual_discount_total_without_kdv": 34.09,
-            "after_manual_discount_item_price_without_kdv": 34.09
+            "item_price_without_kdv": 404.55,
+            "manual_discount_amount": 890.0,
+            "manual_discount_type_id": 3,
+            "total_price_without_kdv": 809.1,
+            "order_pay_status_type_id": null,
+            "before_campaign_item_price": null,
+            "after_manual_discount_total": 0.0,
+            "after_manual_discount_item_price": 0.0,
+            "after_manual_discount_total_without_kdv": 0.0,
+            "after_manual_discount_item_price_without_kdv": 0.0,
           },
           {
-            "id": 27727,
+            "id": 27736,
             "unit": {
               "id": "1c2168e9-8aa8-429d-945b-7a9e1b9cd1e9",
               "code": "ADET",
               "name": "Adet",
-              "has_decimal": false
+              "has_decimal": false,
             },
             "count": 1,
-            "status": {
-              "status_code": "INKITCHEN",
-              "status_name": "HazÄ±rlanÄ±yor"
-            },
-            "is_gift": false,
+            "status": {"status_code": "INKITCHEN", "status_name": "Hazırlanıyor"},
+            "is_gift": null,
             "options": [],
-            "discounts": [],
-            "item_code": "P-W-7715",
+            "discounts": [
+              {
+                "id": 762,
+                "source": "ITEM",
+                "is_active": true,
+                "locked_at": null,
+                "created_at": "2026-10-13T06:54:22.090466",
+                "order_item_id": 27736,
+                "deactivated_at": null,
+                "manual_discount_value": 0.0,
+                "manual_discount_amount": 120.0,
+                "manual_discount_type_id": 2,
+              },
+            ],
+            "item_code": "P-IK-7251",
             "item_note": "",
             "status_id": "INKITCHEN",
-            "item_price": 60.0,
-            "item_title": "Test1 60 - 10kdv",
-            "product_id": 7715,
-            "campaign_id": 242,
+            "item_price": 420.0,
+            "item_title": "Cheeseburger",
+            "product_id": 7251,
+            "campaign_id": null,
             "cancel_note": null,
             "item_object": {
-              "id": 7715,
+              "id": 7251,
               "price": [
-                {
-                  "id": 42519,
-                  "price": 60.0,
-                  "is_default": false,
-                  "order_delivery_type_id": "TAKEOUT"
-                },
-                {
-                  "id": 42520,
-                  "price": 60.0,
-                  "is_default": true,
-                  "order_delivery_type_id": "TABLE"
-                },
-                {
-                  "id": 42521,
-                  "price": 60.0,
-                  "is_default": false,
-                  "order_delivery_type_id": "GETIN"
-                }
+                {"id": 41010, "price": 420.0, "is_default": false, "order_delivery_type_id": "TAKEOUT"},
+                {"id": 41011, "price": 420.0, "is_default": true, "order_delivery_type_id": "TABLE"},
+                {"id": 41012, "price": 420.0, "is_default": false, "order_delivery_type_id": "GETIN"},
               ],
-              "images": null,
+              "images": [
+                {
+                  "image_url": "https://siparisimcdn2.s3.eu-central-1.amazonaws.com/icdn/mobile-detail-cheeseburger-0-2466792229329855.png",
+                  "list_order": 5,
+                  "image_size_id": "mobile_detail",
+                },
+                {
+                  "image_url": "https://siparisimcdn2.s3.eu-central-1.amazonaws.com/icdn/mobile-list-cheeseburger-0-9335431553552354.png",
+                  "list_order": 5,
+                  "image_size_id": "mobile_list",
+                },
+                {
+                  "image_url": "https://siparisimcdn2.s3.eu-central-1.amazonaws.com/icdn/mobile-list-col-cheeseburger-0-4741089529776982.png",
+                  "list_order": 5,
+                  "image_size_id": "mobile_list_col",
+                },
+              ],
               "calorie": 0,
               "item_type": "PRODUCT",
               "make_time": 15,
-              "product_name": "Test1 60 - 10kdv",
-              "short_description": "Test1 60 - 10kdv"
+              "product_name": "Cheeseburger",
+              "short_description": "Yarı brioche ekmek arasına; burger köftesi, cheddar peyniri, çubuk turşusu, isteğe göre özel sos. Patates kızartması ile",
             },
             "tax_percent": 10,
-            "total_price": 60.0,
+            "total_price": 420.0,
             "item_type_id": "PRODUCT",
-            "payment_info": {
-              "name": "Nakit Ãdeme",
-              "type": "CASH",
-              "is_online_payment": false
-            },
+            "payment_info": null,
             "cancel_reject": null,
-            "order_main_id": 18909,
+            "order_main_id": 18912,
             "stock_unit_id": "1c2168e9-8aa8-429d-945b-7a9e1b9cd1e9",
-            "transaction_id": "58e04615-5801-4ce0-a3e9-f4074412d7bc",
-            "is_use_campaign": true,
-            "revision_number": "3f2e36c4-e417-4be4-9aec-21d46ed3a6ba",
+            "transaction_id": null,
+            "is_use_campaign": null,
+            "revision_number": "77ef18ce-c1ce-47ae-bd8a-09912362b96d",
             "printer_old_count": null,
             "promotion_menu_id": null,
-            "before_campaign_total": 45.71,
+            "before_campaign_total": null,
             "cancel_reject_code_id": null,
             "manual_discount_value": 0.0,
-            "item_price_without_kdv": 41.55,
-            "manual_discount_amount": 0.71,
+            "item_price_without_kdv": 381.82,
+            "manual_discount_amount": 120.0,
             "manual_discount_type_id": 2,
-            "total_price_without_kdv": 41.55,
-            "order_pay_status_type_id": "SUCCESS",
-            "before_campaign_item_price": 45.71,
-            "after_manual_discount_total": 45.0,
-            "after_manual_discount_item_price": 45.0,
-            "after_manual_discount_total_without_kdv": 40.91,
-            "after_manual_discount_item_price_without_kdv": 40.91
+            "total_price_without_kdv": 381.82,
+            "order_pay_status_type_id": null,
+            "before_campaign_item_price": null,
+            "after_manual_discount_total": 300.0,
+            "after_manual_discount_item_price": 300.0,
+            "after_manual_discount_total_without_kdv": 272.73,
+            "after_manual_discount_item_price_without_kdv": 272.73,
           },
-          {
-            "id": 27728,
-            "unit": {
-              "id": "1c2168e9-8aa8-429d-945b-7a9e1b9cd1e9",
-              "code": "ADET",
-              "name": "Adet",
-              "has_decimal": false
-            },
-            "count": 1,
-            "status": {
-              "status_code": "INKITCHEN",
-              "status_name": "HazÄ±rlanÄ±yor"
-            },
-            "is_gift": false,
-            "options": [],
-            "discounts": [],
-            "item_code": "P-W-7716",
-            "item_note": "",
-            "status_id": "INKITCHEN",
-            "item_price": 90.0,
-            "item_title": "Test1 90 - 10kdv",
-            "product_id": 7716,
-            "campaign_id": 242,
-            "cancel_note": null,
-            "item_object": {
-              "id": 7716,
-              "price": [
-                {
-                  "id": 42522,
-                  "price": 90.0,
-                  "is_default": false,
-                  "order_delivery_type_id": "TAKEOUT"
-                },
-                {
-                  "id": 42523,
-                  "price": 90.0,
-                  "is_default": true,
-                  "order_delivery_type_id": "TABLE"
-                },
-                {
-                  "id": 42524,
-                  "price": 90.0,
-                  "is_default": false,
-                  "order_delivery_type_id": "GETIN"
-                }
-              ],
-              "images": null,
-              "calorie": 0,
-              "item_type": "PRODUCT",
-              "make_time": 15,
-              "product_name": "Test1 90 - 10kdv",
-              "short_description": "Test1 90 - 10kdv"
-            },
-            "tax_percent": 10,
-            "total_price": 90.0,
-            "item_type_id": "PRODUCT",
-            "payment_info": {
-              "name": "Nakit Ödeme",
-              "type": "CASH",
-              "is_online_payment": false
-            },
-            "cancel_reject": null,
-            "order_main_id": 18909,
-            "stock_unit_id": "1c2168e9-8aa8-429d-945b-7a9e1b9cd1e9",
-            "transaction_id": "58e04615-5801-4ce0-a3e9-f4074412d7bc",
-            "is_use_campaign": true,
-            "revision_number": "e7aa9de2-4f29-40d2-9b95-161491f9c324",
-            "printer_old_count": null,
-            "promotion_menu_id": null,
-            "before_campaign_total": 68.57,
-            "cancel_reject_code_id": null,
-            "manual_discount_value": 0.0,
-            "item_price_without_kdv": 62.34,
-            "manual_discount_amount": 1.07,
-            "manual_discount_type_id": 2,
-            "total_price_without_kdv": 62.34,
-            "order_pay_status_type_id": "SUCCESS",
-            "before_campaign_item_price": 68.57,
-            "after_manual_discount_total": 67.5,
-            "after_manual_discount_item_price": 67.5,
-            "after_manual_discount_total_without_kdv": 61.36,
-            "after_manual_discount_item_price_without_kdv": 61.36
-          }
         ],
         "sso_id": null,
-        "customer": {
-          "id": 15450,
-          "sessionId": null,
-          "name_surname": "Serhat O",
-          "phone_number": null
-        },
-        "campaigns": [
-          {
-            "id": 242,
-            "spot_title": "İlk Siparişe 200 TL İndirim!",
-            "provider_name": "SipariÅim",
-            "is_third_party": false,
-            "campaign_amount": 200.0
-          }
-        ],
-        "dealer_id": 675,
-        "discounts": [
-          {
-            "id": 751,
-            "source": "ORDER",
-            "is_active": true,
-            "locked_at": null,
-            "created_at": "2026-10-12T15:40:20.107518",
-            "order_item_id": null,
-            "deactivated_at": null,
-            "manual_discount_value": 0.0,
-            "manual_discount_amount": 10.0,
-            "manual_discount_type_id": 2
-          }
-        ],
-        "nick_name": "DiÄer Misafir",
-        "sessionId": "a6922311-8eeb-4d0f-b42b-6af90276ef30",
+        "customer": {"id": null, "sessionId": null, "name_surname": " "},
+        "campaigns": null,
+        "dealer_id": 896,
+        "discounts": [],
+        "nick_name": "Diğer Misafir",
+        "sessionId": "469229c8-5bcb-4b9b-b6bb-e2abee45e283",
         "order_note": "",
         "tip_amount": null,
         "cancel_note": null,
-        "customer_id": 15450,
-        "record_date": "2026-10-12T18:40:55.559",
+        "customer_id": null,
+        "record_date": "2026-10-13T09:54:31.956",
         "courier_info": null,
-        "order_number": "fa6ab9a1-ca42-4374-bf3a-178537d952d5",
+        "order_number": "93f8ce13-41de-45a3-8bcf-7ea7d6afb9d6",
         "order_status": {
-          "order_status_code": "OUT_KITCHEN",
-          "order_status_name": "HazÄ±rlanÄ±yor",
-          "order_status_group_id": "KITCHEN"
+          "order_status_code": "IN_KITCHEN",
+          "order_status_name": "Hazırlanıyor",
+          "order_status_group_id": "KITCHEN",
         },
-        "payment_info": {
-          "name": "Nakit Ödeme",
-          "type": "CASH",
-          "is_online_payment": false
-        },
-        "total_amount": 630.0,
+        "payment_info": null,
+        "total_amount": 300.0,
         "cancel_reject": null,
         "delivery_date": null,
         "order_options": null,
-        "order_point_id": "TAKEOUT",
+        "order_point_id": "TABLE",
         "client_point_id": "MOBILE_APP",
-        "is_use_campaign": true,
-        "customer_address": {
-          "id": 8621,
-          "floor": "",
-          "latlng": null,
-          "address": "sss",
-          "city_id": 34,
-          "city_name": "İSTANBUL",
-          "district_id": 6,
-          "flat_number": "",
-          "address_name": "other",
-          "address_route": "",
-          "district_name": "BAHÇELİ EVLER",
-          "building_number": "",
-          "neighborhood_id": null,
-          "neighborhood_name": null
-        },
-        "delivery_type_id": "TAKEOUT",
+        "is_use_campaign": false,
+        "customer_address": null,
+        "delivery_type_id": "TABLE",
         "session_point_id": "RESTOP",
-        "table_service_id": null,
-        "before_campaign_total": 840.0,
-        "prefixed_order_number": null,
+        "table_service_id": 10388,
+        "invoice_success_link": null,
+        "before_campaign_total": 1310.0,
+        "prefixed_order_number": "TBS-1",
         "tip_amount_without_kdv": null,
-        "total_amount_without_kdv": 536.36
-      }
+        "total_amount_without_kdv": 272.73,
+      },
     ],
-    "qr_code": "",
-    "dealer_id": 675,
-    "q_table_id": "",
-    "service_id": 18909,
+    "qr_code": null,
+    "dealer_id": 896,
+    "q_table_id": "JqeqQBvbzjcAXu6P",
+    "service_id": 10388,
     "table_info": {
-      "table_code": "PAKET",
-      "table_name": "Paket",
-      "station_code": "Paket",
-      "station_name": "Paket"
+      "table_code": "JqeqQBvbzjcAXu6P",
+      "table_name": "BAHCE-2",
+      "station_code": "0NcLwX1vs8e7frtE",
+      "station_name": "BAHCE",
     },
     "dealer_info": {
-      "id": 675,
-      "address": "Hilltown Maltepe Test",
-      "dealer_name": "Siparişim cafe"
+      "id": 896,
+      "address": "Cevizli Mah.Zuhal Cad.Ritim İstanbul A3 Blok No:46/C D:135",
+      "dealer_name": "Tezgah Burger",
     },
-    "payment_type": "Nakit Ödeme",
-    "person_count": 0,
-    "service_number": null,
-    "pay_customer_id": 15450,
-    "payment_type_id": "CASH",
-    "revision_number": "",
+    "payment_type": null,
+    "person_count": 1,
+    "pleksi_number": null,
+    "service_number": "980005e9-c404-4b44-ab72-f14919efb2cd",
+    "pay_customer_id": null,
+    "payment_type_id": null,
+    "revision_number": "b8483b98-c9ec-449b-a73c-cbf84557b543",
     "payment_model_id": "POST",
-    "total_tip_amount": 0,
-    "number_of_service": 0,
-    "service_status_id": "",
-    "service_pay_type_id": "",
-    "service_order_amount": 630.0,
-    "service_total_amount": 630.0,
+    "total_tip_amount": 0.0,
+    "number_of_service": null,
+    "service_status_id": "IN_KITCHEN",
+    "service_pay_type_id": null,
+    "service_order_amount": 300.0,
+    "service_total_amount": 300.0,
     "table_service_amount": 0,
-    "service_delivery_type_id": "TAKEOUT",
-    "total_tip_amount_without_kdv": 0,
-    "service_order_amount_without_kdv": 536.36,
-    "service_total_amount_without_kdv": 536.36,
-    "table_service_amount_without_kdv": 0
+    "service_delivery_type_id": "SS",
+    "total_tip_amount_without_kdv": 0.0,
+    "service_order_amount_without_kdv": 272.73,
+    "service_total_amount_without_kdv": 272.73,
+    "table_service_amount_without_kdv": 0,
   },
-  "print_template_id": "TAKEOUT",
+  "print_template_id": "TABLE",
   "paper_size": "mm80",
-  "pos_station_printer_id": 220,
-  "pos_station_id": 225,
-  "printer_type_id": "NETWORK",
-  "ip_address": "192.168.1.200",
-  "port": 9100,
+  "pos_station_printer_id": 261,
+  "pos_station_id": 275,
+  "printer_type_id": "USB",
+  "ip_address": "{\"name\":\"XP-80C\",\"vendorId\":\"\",\"productId\":\"\",\"paperSize\":\"mm80\",\"type\":\"USB\"}",
+  "port": null,
   "is_revision": false,
-  "printer_name": "honor mto",
+  "printer_name": "XP-80C",
   "payment_model_id": "POST",
   "is_payment_notification": false,
-  "is_check_notification": false
+  "is_check_notification": false,
 };
