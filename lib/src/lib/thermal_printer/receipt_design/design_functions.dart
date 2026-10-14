@@ -847,14 +847,13 @@ abstract class DesignFunctions {
         );
       }
 
-      final discount = order.discounts!.firstWhereOrNull((e) => e.isActive == true);
-      if (discount != null) {
+      if ([ManuelDiscountType.noDiscount.discountType, null].contains(order.manualDiscountTypeId) == false) {
         discounts.add(
           addRowWidget(
             flex1: 3,
             flex2: 2,
             'İNDİRİM TUTARI:',
-            '-${discount.manualDiscountAmount?.getPrice()}',
+            '-${order.totalManualDiscount?.getPrice()}',
           ),
         );
       }
