@@ -682,8 +682,8 @@ abstract class DesignFunctions {
                   direction: Axis.vertical,
                   textDirection: TextDirection.rtl,
                   price: item.totalPrice!,
-                  discountPrice: item.afterManualDiscountItemPrice ??
-                      (item.isUseCampaign == true ? item.beforeCampaignItemPrice : null),
+                  discountPrice:
+                      item.afterManualDiscountTotal ?? (item.isUseCampaign == true ? item.beforeCampaignTotal : null),
                   isComplimentary: item.manualDiscountTypeId == ManuelDiscountType.giveaway.discountType,
                   textHeight: 1,
                 )
