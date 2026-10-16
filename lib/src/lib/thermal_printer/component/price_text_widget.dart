@@ -54,8 +54,8 @@ class PriceTextWidget extends StatelessWidget {
       textDirection: textDirection,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (_hasDiscount) _buildDiscountText(),
         _buildOriginalPrice(),
+        if (_hasDiscount) _buildDiscountText(),
       ],
     );
   }
