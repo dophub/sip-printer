@@ -436,7 +436,7 @@ const orderMap = {
               "name": "Adet",
               "has_decimal": false
             },
-            "count": 1,
+            "count": 2.4,
             "status": {
               "status_code": "INKITCHEN",
               "status_name": "HazÄ±rlanÄ±yor"
@@ -447,7 +447,7 @@ const orderMap = {
             "item_code": "P-W-7716",
             "item_note": "",
             "status_id": "INKITCHEN",
-            "item_price": 90.0,
+            "item_price": 90,
             "item_title": "Test1 90 - 10kdv",
             "product_id": 7716,
             "campaign_id": 242,
@@ -482,7 +482,7 @@ const orderMap = {
               "short_description": "Test1 90 - 10kdv"
             },
             "tax_percent": 10,
-            "total_price": 90.0,
+            "total_price": 9000.0,
             "item_type_id": "PRODUCT",
             "payment_info": {
               "name": "Nakit Ödeme",
@@ -493,7 +493,7 @@ const orderMap = {
             "order_main_id": 18909,
             "stock_unit_id": "1c2168e9-8aa8-429d-945b-7a9e1b9cd1e9",
             "transaction_id": "58e04615-5801-4ce0-a3e9-f4074412d7bc",
-            "is_use_campaign": true,
+            "is_use_campaign": false,
             "revision_number": "e7aa9de2-4f29-40d2-9b95-161491f9c324",
             "printer_old_count": null,
             "promotion_menu_id": null,
@@ -505,11 +505,6 @@ const orderMap = {
             "manual_discount_type_id": 2,
             "total_price_without_kdv": 62.34,
             "order_pay_status_type_id": "SUCCESS",
-            "before_campaign_item_price": 68.57,
-            "after_manual_discount_total": 67.5,
-            "after_manual_discount_item_price": 67.5,
-            "after_manual_discount_total_without_kdv": 61.36,
-            "after_manual_discount_item_price_without_kdv": 61.36
           }
         ],
         "sso_id": null,

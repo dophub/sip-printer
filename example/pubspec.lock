@@ -5,10 +5,10 @@ packages:
     dependency: transitive
     description:
       name: archive
-      sha256: f773153144ce0456ae77d96bd247f2efd58efe4f3e5ad42616d0385c031aea11
+      sha256: "0d58d1fa1fddf6588251ccf2819f3fb3b6d0452c1b2813ac7413a05592bfbefe"
       url: "https://pub.dev"
     source: hosted
-    version: "4.5.1"
+    version: "4.5.2"
   async:
     dependency: transitive
     description:
@@ -249,7 +249,7 @@ packages:
     description:
       path: "."
       ref: prod
-      resolved-ref: "88ddfcad62c19dd7e107f719da3cf21ee5eb365a"
+      resolved-ref: e3d5945368701bd895be3f54acf8bb8c9c86e667
       url: "https://github.com/dophub/sip-models.git"
     source: git
     version: "1.2.51"
@@ -342,10 +342,10 @@ packages:
     dependency: transitive
     description:
       name: vm_service
-      sha256: "5f37239c4851efcef929cea7824e76df7f2f0970aef85d66bbc430afa40e72f0"
+      sha256: "89b11d62e1040ee681af3b4f1c97a803ecbf010c6e8b9c5896ee5b08c3bf7b78"
       url: "https://pub.dev"
     source: hosted
-    version: "15.3.0"
+    version: "15.4.0"
 sdks:
   dart: ">=3.13.3 <4.0.0"
   flutter: ">=3.18.0-18.0.pre.54"
