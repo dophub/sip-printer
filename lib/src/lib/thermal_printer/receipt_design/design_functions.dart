@@ -3,6 +3,7 @@ import 'package:collection/collection.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/find_locale.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sip_models/enum.dart';
@@ -580,6 +581,7 @@ abstract class DesignFunctions {
 
     Widget row(
       String col1, {
+      Widget? unitPriceWidget,
       Widget? col2Widget,
       FontWeight fontWeight = FontWeight.w500,
       double leftPadding = 0,
@@ -591,31 +593,36 @@ abstract class DesignFunctions {
           children: [
             Expanded(
               flex: 8,
-              child: Text(
-                col1,
-                style: TextStyle(
-                  fontSize: 34,
-                  fontFamily: fontFamily,
-                  fontWeight: fontWeight,
-                  height: 1.2,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (unitPriceWidget != null) unitPriceWidget,
+                  Text(
+                    col1,
+                    style: TextStyle(
+                      fontSize: 34,
+                      fontFamily: fontFamily,
+                      fontWeight: fontWeight,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
               ),
             ),
-            col2Widget != null
-                ? Expanded(
-                    flex: 5,
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: col2Widget,
-                    ),
-                  )
-                : const SizedBox(),
+            if (col2Widget != null)
+              Expanded(
+                flex: 5,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: col2Widget,
+                ),
+              )
           ],
         ),
       );
     }
 
-    List<Widget> addOption(String title, List<OrderOptionItem>? items, double leftPadding) {
+    List<Widget> addOption(String title, List<OrderOptionItem>? items, [double leftPadding = 0]) {
       if (items?.isNotEmpty != true) return [];
       List<Widget> optionWidgets = [];
       optionWidgets.add(
@@ -636,8 +643,6 @@ abstract class DesignFunctions {
     for (int i = 0; i < items.length; i++) {
       var item = items[i];
 
-      final countStr = '${item.count}x';
-
       /// ITEM TITLE
       final isItemCancelled = item.status?.statusCode == OrderItemStatusId.CANCEL.name;
       final isOrderCancelled = orderStatusGroupId == OrderStatusGroup.CANCEL.name;
@@ -655,22 +660,38 @@ abstract class DesignFunctions {
       }
 
       /// item Title - Price -----------------------------------------------
-      Widget? price;
-      if (isPriceVisible == true && item.totalPrice != null) {
-        price = PriceTextWidget(
-          direction: Axis.vertical,
-          textDirection: TextDirection.rtl,
-          price: item.totalPrice!,
-          discountPrice:
-              item.afterManualDiscountItemPrice ?? (item.isUseCampaign == true ? item.beforeCampaignItemPrice : null),
-          isComplimentary: item.manualDiscountTypeId == ManuelDiscountType.giveaway.discountType,
-          textHeight: 1,
-        );
-      }
+
+      final num count = item.count == item.count!.toInt() ? item.count!.toInt() : item.count!;
+      final countString = '$count${item.unit?.name ?? ''}';
+      final withOutDigitNumber = item.itemPrice == item.itemPrice?.toInt();
 
       children.add(
-        row('$countStr${item.itemTitle!}', col2Widget: price, fontWeight: FontWeight.w700),
+        row(
+          item.itemTitle!,
+          unitPriceWidget: Text(
+            '$countString${isPriceVisible ? 'x${item.itemPrice?.getPrice(withOutDigitNumber: withOutDigitNumber) ?? ''}' : ''}',
+            style: TextStyle(
+              fontSize: 34,
+              fontFamily: fontFamily,
+              fontWeight: FontWeight.w500,
+              height: 1.2,
+            ),
+          ),
+          col2Widget: isPriceVisible && item.totalPrice != null
+              ? PriceTextWidget(
+                  direction: Axis.vertical,
+                  textDirection: TextDirection.rtl,
+                  price: item.totalPrice!,
+                  discountPrice: item.afterManualDiscountItemPrice ??
+                      (item.isUseCampaign == true ? item.beforeCampaignItemPrice : null),
+                  isComplimentary: item.manualDiscountTypeId == ManuelDiscountType.giveaway.discountType,
+                  textHeight: 1,
+                )
+              : null,
+          fontWeight: FontWeight.w700,
+        ),
       );
+
       children.add(const SizedBox(height: 10));
 
       /// options -----------------------------------------------
@@ -682,7 +703,7 @@ abstract class DesignFunctions {
             if (option.items?.isNotEmpty == true) {
               /// options item -----------------------------------------------
               children.addAll(
-                addOption(option.title!, option.items, countStr.length * 8),
+                addOption(option.title!, option.items),
               );
 
               children.add(const SizedBox(height: 10));
@@ -695,20 +716,19 @@ abstract class DesignFunctions {
             children.add(row(
               '-${option.sectionTitle!}:',
               fontWeight: FontWeight.w500,
-              leftPadding: countStr.length * 8,
             ));
 
             /// section product name -----------------------------------------------
             children.add(row(
               option.sectionItem!.productName!,
-              leftPadding: (countStr.length + 3) * 8,
+              leftPadding: 3 * 8,
             ));
 
             /// options -----------------------------------------------
             for (var sectionOption in option.sectionItem!.options!) {
               /// options item -----------------------------------------------
               children.addAll(
-                addOption(sectionOption.title!, sectionOption.items, (countStr.length + 3) * 8),
+                addOption(sectionOption.title!, sectionOption.items, 3 * 8),
               );
             }
             children.add(const SizedBox(height: 10));
@@ -726,7 +746,6 @@ abstract class DesignFunctions {
         children.add(row(
           'Ürün Notu: ${item.itemNote!}',
           fontWeight: FontWeight.w700,
-          leftPadding: countStr.length * 8,
         ));
       }
 

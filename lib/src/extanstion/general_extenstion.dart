@@ -20,7 +20,7 @@ extension CustomerAddressModelExtension on CustomerAddressModel {
   }
 }
 
-extension PriceFormat on double {
+extension PriceFormat on num {
   String getPrice({
     bool withOutDigitNumber = false,
     bool trimTrailingZeros = false,
