@@ -7,12 +7,12 @@ import 'package:htmltopdfwidgets/htmltopdfwidgets.dart' as htmltopdfwidgets;
 import 'package:pdf/widgets.dart' as pw;
 import 'dart:typed_data';
 
-class Utils {
-  static Utils? _instance;
+class ThermalPrinterUtils {
+  static ThermalPrinterUtils? _instance;
 
-  Utils._();
+  ThermalPrinterUtils._();
 
-  static get instance => _instance ??= Utils._();
+  static get instance => _instance ??= ThermalPrinterUtils._();
 
   Future<Uint8List> createHtmlToPdf(final String html, PaperSize paperSize) async {
     final List<pw.Widget> widgets = await htmltopdfwidgets.HTMLToPdf().convert(html, useNewEngine: true);
