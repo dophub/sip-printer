@@ -10,17 +10,21 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # flutter_thermal_printer: ^1.2.0
-  esc_pos_utils_plus:
-    # path: ../esc_pos_utils_plus
-   git:
-    url: https://github.com/Mto292/esc_pos_utils_plus.git
-    ref: main
+
   sunmi_printer_plus: ^4.1.1
   intl: any
   collection: any
   qr_flutter: ^4.1.0
   print_usb: ^0.0.3
+  htmltopdfwidgets: ^2.2.0
+  pdf: ^3.13.1
+  printing: ^5.15.1
+  image: ^4.12.0
+
+  esc_pos_utils_plus:
+    git:
+      url: https://github.com/Mto292/esc_pos_utils_plus.git
+      ref: main
 
   sip_models:
     git:
@@ -28,7 +32,7 @@ dependencies:
       ref: prod
 
   usb_printer:
-  #path: ../../usb_printer
+    #path: ../../usb_printer
     git:
       url: https://github.com/Mto292/usb_printer.git
       ref: main

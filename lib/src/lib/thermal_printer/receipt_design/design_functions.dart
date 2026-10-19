@@ -3,7 +3,6 @@ import 'package:collection/collection.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/find_locale.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sip_models/enum.dart';
