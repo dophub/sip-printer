@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:printing/printing.dart' show Printing;
 import 'package:image/image.dart' as img;
+import 'package:sip_models/ri_enum.dart' show PrinterPaperTypeEnum;
 import '../../../sip_printer.dart';
 import 'package:htmltopdfwidgets/htmltopdfwidgets.dart' as htmltopdfwidgets;
 import 'package:pdf/widgets.dart' as pw;
@@ -14,12 +14,12 @@ class ThermalPrinterUtils {
 
   static ThermalPrinterUtils get instance => _instance ??= ThermalPrinterUtils._();
 
-  Future<Uint8List> createHtmlToPdf(final String html, PaperSize paperSize) async {
+  Future<Uint8List> createHtmlToPdf(final String html, PrinterPaperTypeEnum paperSize) async {
     final List<pw.Widget> widgets = await htmltopdfwidgets.HTMLToPdf().convert(html, useNewEngine: true);
     return _buildPdf(widgets, paperSize);
   }
 
-  Future<Uint8List> _buildPdf(List<pw.Widget> widgets, PaperSize paperSize) async {
+  Future<Uint8List> _buildPdf(List<pw.Widget> widgets, PrinterPaperTypeEnum paperSize) async {
     final doc = pw.Document(
       theme: pw.ThemeData.withFont(
         base: SipPrinter.instance.regularFont,
@@ -45,7 +45,7 @@ class ThermalPrinterUtils {
     return doc.save();
   }
 
-  Future<List<int>> convertPdfToEscPosAndCut(Uint8List pdfBytes, PaperSize paperSize) async {
+  Future<List<int>> convertPdfToEscPosAndCut(Uint8List pdfBytes, PrinterPaperTypeEnum paperSize) async {
     final watch = Stopwatch()..start();
 
     img.Image image = await _pdfToImage(pdfBytes, paperSize);
@@ -76,7 +76,7 @@ class ThermalPrinterUtils {
     return bytes;
   }
 
-  Future<img.Image> _pdfToImage(Uint8List pdfBytes, PaperSize paperSize) async {
+  Future<img.Image> _pdfToImage(Uint8List pdfBytes, PrinterPaperTypeEnum paperSize) async {
     final watch = Stopwatch()..start();
 
     const double rasterDpi = 72;
@@ -91,13 +91,11 @@ class ThermalPrinterUtils {
     var image = img.decodeImage(pngBytes)!;
     print('pdfToImage: 3 ${image.width}x${image.height} (${watch.elapsedMilliseconds} ms)');
 
-    final paperWidth = paperSize == PaperSize.mm80 ? 576 : 384;
-
     watch.reset();
-    if (image.width != paperWidth) {
+    if (image.width != paperSize.width) {
       image = img.copyResize(
         image,
-        width: paperWidth.toInt(),
+        width: paperSize.width,
         interpolation: img.Interpolation.cubic,
       );
     }
