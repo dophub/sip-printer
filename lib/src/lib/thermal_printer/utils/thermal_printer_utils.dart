@@ -14,9 +14,41 @@ class ThermalPrinterUtils {
 
   static ThermalPrinterUtils get instance => _instance ??= ThermalPrinterUtils._();
 
-  Future<Uint8List> createHtmlToPdf(final String html, PrinterPaperTypeEnum paperSize) async {
+  Future<Uint8List> buildPdfFromHtml(final String html, PrinterPaperTypeEnum paperSize) async {
     final List<pw.Widget> widgets = await htmltopdfwidgets.HTMLToPdf().convert(html, useNewEngine: true);
     return _buildPdf(widgets, paperSize);
+  }
+
+  Future<Uint8List> buildPreviewPdfFromHtml(final String html, PrinterPaperTypeEnum paperSize) async {
+    final List<pw.Widget> widgets = await htmltopdfwidgets.HTMLToPdf().convert(html, useNewEngine: true);
+    return _buildPreviewPdf(widgets, paperSize);
+  }
+
+  Future<Uint8List> _buildPreviewPdf(
+    List<pw.Widget> widgets,
+    PrinterPaperTypeEnum paperSize,
+  ) async {
+    final doc = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: SipPrinter.instance.regularFont,
+        bold: SipPrinter.instance.boldFont,
+      ),
+    );
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: htmltopdfwidgets.PdfPageFormat(
+          paperSize.width.toDouble(),
+          842, // pt cinsinden sonlu yükseklik (~211 mm)
+          marginAll: 0,
+        ),
+        margin: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        build: (_) => widgets,
+      ),
+    );
+
+    return doc.save();
   }
 
   Future<Uint8List> _buildPdf(List<pw.Widget> widgets, PrinterPaperTypeEnum paperSize) async {
