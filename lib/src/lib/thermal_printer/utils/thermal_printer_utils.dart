@@ -12,7 +12,7 @@ class ThermalPrinterUtils {
 
   ThermalPrinterUtils._();
 
-  static get instance => _instance ??= ThermalPrinterUtils._();
+  static ThermalPrinterUtils get instance => _instance ??= ThermalPrinterUtils._();
 
   Future<Uint8List> createHtmlToPdf(final String html, PaperSize paperSize) async {
     final List<pw.Widget> widgets = await htmltopdfwidgets.HTMLToPdf().convert(html, useNewEngine: true);
