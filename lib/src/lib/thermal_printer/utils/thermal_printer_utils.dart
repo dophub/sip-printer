@@ -9,6 +9,8 @@ import 'dart:typed_data';
 
 class ThermalPrinterUtils {
   static ThermalPrinterUtils? _instance;
+  final double printerDpi = 203.2;
+  final double pdfPointsPerInch = 72;
 
   ThermalPrinterUtils._();
 
@@ -24,6 +26,9 @@ class ThermalPrinterUtils {
     return _buildPreviewPdf(widgets, paperSize);
   }
 
+  /// dot -> inç -> pt   (576 dot ≈ 204 pt ≈ 72 mm)
+  double _widthInPoints(PrinterPaperTypeEnum paperSize) => paperSize.width / printerDpi * pdfPointsPerInch;
+
   Future<Uint8List> _buildPreviewPdf(
     List<pw.Widget> widgets,
     PrinterPaperTypeEnum paperSize,
@@ -38,11 +43,11 @@ class ThermalPrinterUtils {
     doc.addPage(
       pw.MultiPage(
         pageFormat: htmltopdfwidgets.PdfPageFormat(
-          paperSize.width.toDouble(),
+          _widthInPoints(paperSize),
           842, // pt cinsinden sonlu yükseklik (~211 mm)
           marginAll: 0,
         ),
-        margin: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        margin: const pw.EdgeInsets.symmetric(horizontal: 0, vertical: 8),
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         build: (_) => widgets,
       ),
@@ -62,11 +67,11 @@ class ThermalPrinterUtils {
     doc.addPage(
       pw.Page(
         pageFormat: htmltopdfwidgets.PdfPageFormat(
-          paperSize.width.toDouble(),
+          _widthInPoints(paperSize),
           double.infinity,
           marginAll: 0,
         ),
-        margin: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        margin: const pw.EdgeInsets.symmetric(horizontal: 0, vertical: 8),
         build: (_) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: widgets,
@@ -111,8 +116,7 @@ class ThermalPrinterUtils {
   Future<img.Image> _pdfToImage(Uint8List pdfBytes, PrinterPaperTypeEnum paperSize) async {
     final watch = Stopwatch()..start();
 
-    const double rasterDpi = 72;
-    final raster = await Printing.raster(pdfBytes, dpi: rasterDpi).first;
+    final raster = await Printing.raster(pdfBytes, dpi: printerDpi).first;
     print('pdfToImage: 1 (${watch.elapsedMilliseconds} ms)');
 
     watch.reset();
