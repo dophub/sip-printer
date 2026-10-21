@@ -71,7 +71,7 @@ class ThermalPrinterUtils {
           double.infinity,
           marginAll: 0,
         ),
-        margin: const pw.EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+        margin: const pw.EdgeInsets.symmetric(horizontal: 0, vertical: 50),
         build: (_) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: widgets,
@@ -144,7 +144,7 @@ class ThermalPrinterUtils {
   /// [chunkHeight] : Bazı yazıcılar tek blokta çok yüksek resmi kabul etmez, bu yüzden parçalanır.
   List<int> _imageToEscPosRaster(
     img.Image source, {
-    int threshold = 160,
+    int threshold = 200,
     int chunkHeight = 256,
   }) {
     final image = source.numChannels == 4 ? source : source.convert(numChannels: 4);
