@@ -26,7 +26,7 @@ class SipPrinter {
     required String footerTitle,
   }) async {
     final watch = Stopwatch()..start();
-    final regularFont = pw.Font.ttf(await rootBundle.load('assets/fonts/Poppins-Regular.ttf'));
+    final regularFont = pw.Font.ttf(await rootBundle.load('assets/fonts/Poppins-Medium.ttf'));
     print('load font: (${watch.elapsedMilliseconds} ms)');
 
     final boldFont = pw.Font.ttf(await rootBundle.load('assets/fonts/Poppins-Bold.ttf'));
