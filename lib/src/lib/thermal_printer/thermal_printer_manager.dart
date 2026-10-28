@@ -26,10 +26,25 @@ class ThermalPrinterManager {
 
   /// Sipariş Fişi
   Future<(List<int>, img.Image)> createReceiptForTable(
-      PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
+    PrinterPaperTypeEnum paperSize,
+    PrinterQueueResponseModel printModel,
+  ) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
       return ReceiptDesign(Generator(type, _profile), type).createReceiptForTableWidget(printModel);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Sipariş Fişi
+  Future<List<int>> createReceiptForTableByESC(
+    PrinterPaperTypeEnum paperSize,
+    PrinterQueueResponseModel printModel,
+  ) {
+    try {
+      final type = _printerPaperTypeToPaperSize(paperSize);
+      return ReceiptDesign(Generator(type, _profile), type).createReceiptForTable(printModel);
     } catch (e) {
       rethrow;
     }
@@ -41,6 +56,16 @@ class ThermalPrinterManager {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
       return ReceiptDesign(Generator(type, _profile), type).createReceiptForGetInWidget(printModel);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Gel Al
+  List<int> createReceiptForGetInByESC(PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
+    try {
+      final type = _printerPaperTypeToPaperSize(paperSize);
+      return ReceiptDesign(Generator(type, _profile), type).createReceiptForGetIn(printModel);
     } catch (e) {
       rethrow;
     }
@@ -59,12 +84,35 @@ class ThermalPrinterManager {
     }
   }
 
+  /// Paket Siparisi
+  Future<List<int>> createReceiptForTakeoutByESC(
+    PrinterPaperTypeEnum paperSize,
+    PrinterQueueResponseModel printModel,
+  ) {
+    try {
+      final type = _printerPaperTypeToPaperSize(paperSize);
+      return ReceiptDesign(Generator(type, _profile), type).createReceiptForTakeout(printModel);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// Kasa Fişi
   Future<(List<int>, img.Image)> createReceiptForCashRegister(
       PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
       return ReceiptDesign(Generator(type, _profile), type).createReceiptForCashRegisterWidget(printModel);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Kasa Fişi
+  List<int> createReceiptForCashRegisterByESC(PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
+    try {
+      final type = _printerPaperTypeToPaperSize(paperSize);
+      return ReceiptDesign(Generator(type, _profile), type).createReceiptForCashRegister(printModel);
     } catch (e) {
       rethrow;
     }
@@ -81,11 +129,31 @@ class ThermalPrinterManager {
     }
   }
 
+  /// Masa Adisyonu
+  List<int> createReceiptForTableBillByESC(PrinterPaperTypeEnum paperSize, PrinterQueueResponseModel printModel) {
+    try {
+      final type = _printerPaperTypeToPaperSize(paperSize);
+      return ReceiptDesign(Generator(type, _profile), type).createReceiptForTableBill(printModel);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// print report
   Future<(List<int>, img.Image)> createReceiptForReport(PrinterPaperTypeEnum paperSize, DailyReportModel printModel) {
     try {
       final type = _printerPaperTypeToPaperSize(paperSize);
       return ReceiptDesign(Generator(type, _profile), type).createReceiptForReportWidget(printModel);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// print report
+  List<int> createReceiptForReportByESC(PrinterPaperTypeEnum paperSize, DailyReportModel printModel) {
+    try {
+      final type = _printerPaperTypeToPaperSize(paperSize);
+      return ReceiptDesign(Generator(type, _profile), type).createReceiptForReport(printModel);
     } catch (e) {
       rethrow;
     }
@@ -100,6 +168,29 @@ class ThermalPrinterManager {
       final type = _printerPaperTypeToPaperSize(paperSize);
       return await ReceiptDesign(Generator(type, _profile), type).createReceiptForKitchenByWidget(printModel);
     } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// print kitchen order
+  Future<List<int>> createReceiptForKitchenOrderByESC(
+    PrinterPaperTypeEnum paperSize,
+    PrinterQueueResponseModel printModel,
+  ) async {
+    try {
+      final type = _printerPaperTypeToPaperSize(paperSize);
+      return ReceiptDesign(Generator(type, _profile), type).createReceiptForKitchen(printModel);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<int>> createReceiptForTestByESC(PrinterPaperTypeEnum paperSize) {
+    try {
+      final type = _printerPaperTypeToPaperSize(paperSize);
+      return ReceiptDesign(Generator(type, _profile), type).testTicket();
+    } catch (e) {
+      debugPrint(e.toString());
       rethrow;
     }
   }
