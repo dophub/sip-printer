@@ -627,6 +627,42 @@ class ReceiptDesign extends DesignFunctions {
     }
   }
 
+  /// print Report
+  List<int> createReceiptForKitchen(PrinterQueueResponseModel printData) {
+    try {
+      List<int> byte = [];
+
+      /// slip title ------------------------------------------------------------------
+      addReceiptTitle(byte, "MUTFAK FİŞİ");
+      addEmptyLines(byte);
+
+      /// order header ------------------------------------------------------------------
+      addHeader(byte, printData.printData!);
+
+      /// prdocut detail ------------------------------------------------------------------
+      for (int i = 0; i < printData.printData!.orders!.length; i++) {
+        final order = printData.printData!.orders![i];
+
+        /// order header ------------------------------------------------------------------
+        addOrderHeader(byte, order, printPayment: false);
+        addSeparator(byte);
+
+        /// order item ------------------------------------------------------------------
+        createColumnFromOrderDetail(
+          byte,
+          order.items!,
+        );
+
+        if (i < printData.printData!.orders!.length - 1) addSeparator(byte);
+      }
+
+      cut(byte);
+      return byte;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<(List<int>, img.Image)> createReceiptForKitchenByWidget(PrinterQueueResponseModel printData) async {
     final List<Widget> widgetList = [];
 
